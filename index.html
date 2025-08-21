@@ -2,186 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat</title>
+  <title>AI Chat with Groq LLM</title>
   <style>
-    :root {
-      --whatsapp-bg: #e5ddd5;
-      --chat-user: #dcf8c6;
-      --chat-ai: #ffffff;
-      --header-bg: #075e54;
-      --message-text: #303030;
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      background: #ece5dd; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh;
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: #128C7E;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: var(--whatsapp-bg);
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-
-    .chat-header {
-      background: var(--header-bg);
-      padding: 1rem;
+    .chat-container {
+      width: 400px;
+      height: 600px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
       display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .chat-header h2 {
-      color: white;
-      font-size: 1.2rem;
-      font-weight: 500;
-    }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
+      flex-direction: column;
       background: #fff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-
     #chat-box {
-      height: calc(100vh - 180px);
+      flex: 1;
+      padding: 10px;
       overflow-y: auto;
-      padding: 1rem;
-      background-image: url('https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e7195b6b733d9110b408f075d.png');
-      background-repeat: repeat;
+      display: flex;
+      flex-direction: column;
+      background: #e5ddd5;
     }
-
     .message {
-      margin: 0.5rem 0;
-      padding: 0.8rem 1rem;
-      border-radius: 7.5px;
-      max-width: 65%;
+      max-width: 70%;
+      padding: 8px 10px;
+      margin: 5px 0;
+      border-radius: 10px;
+      line-height: 1.4;
       position: relative;
-      color: var(--message-text);
-      box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+      font-size: 14px;
     }
-
     .user {
-      background-color: var(--chat-user);
-      margin-left: auto;
-      border-top-right-radius: 0;
+      align-self: flex-end;
+      background: #dcf8c6;
+      border-bottom-right-radius: 0;
     }
-
     .ai {
-      background-color: var(--chat-ai);
-      margin-right: auto;
-      border-top-left-radius: 0;
+      align-self: flex-start;
+      background: #fff;
+      border-bottom-left-radius: 0;
+      border: 1px solid #ddd;
     }
-
-    .message::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      width: 12px;
-      height: 12px;
+    .timestamp {
+      font-size: 11px;
+      color: gray;
+      margin-top: 3px;
+      text-align: right;
     }
-
-    .user::before {
-      right: -12px;
-      border-bottom-left-radius: 16px;
-      border-right: 12px solid transparent;
-      border-bottom: 12px solid var(--chat-user);
+    .ai .timestamp {
+      text-align: left;
     }
-
-    .ai::before {
-      left: -12px;
-      border-bottom-right-radius: 16px;
-      border-left: 12px solid transparent;
-      border-bottom: 12px solid var(--chat-ai);
-    }
-
     .input-container {
       display: flex;
-      gap: 0.5rem;
-      padding: 1rem;
+      padding: 10px;
+      border-top: 1px solid #ccc;
       background: #f0f0f0;
-      align-items: center;
     }
-
     #msg {
       flex: 1;
-      padding: 0.9rem;
-      border: none;
-      border-radius: 25px;
-      font-size: 0.95rem;
-      background: white;
-    }
-
-    #msg:focus {
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
       outline: none;
     }
-
     button {
-      width: 45px;
-      height: 45px;
-      background-color: #128C7E;
-      color: white;
+      margin-left: 10px;
+      padding: 10px 15px;
       border: none;
       border-radius: 50%;
+      background: #25d366;
+      color: white;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s;
+      font-size: 16px;
     }
-
     button:hover {
-      background-color: #075e54;
-    }
-
-    .message-time {
-      font-size: 0.75rem;
-      color: #667781;
-      float: right;
-      margin-left: 1rem;
-      margin-top: 3px;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 0;
-      }
-      .container {
-        border-radius: 0;
-        height: 100vh;
-      }
-      #chat-box {
-        height: calc(100vh - 130px);
-      }
-      .message {
-        max-width: 85%;
-      }
+      background: #20b358;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="chat-header">
-      <div class="avatar">SK</div>
-      <h2>AI Assistant</h2>
-    </div>
+  <div class="chat-container">
     <div id="chat-box"></div>
     <div class="input-container">
       <input id="msg" placeholder="Type a message" />
@@ -190,54 +99,39 @@
   </div>
 
   <script>
+    function getTime() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
     async function sendMessage() {
       const msgInput = document.getElementById("msg");
-      const message = msgInput.value.trim();
+      const message = msgInput.value;
       if (!message) return;
-
-      const time = new Date().toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-      });
 
       const chatBox = document.getElementById("chat-box");
       chatBox.innerHTML += `
         <div class="message user">
           ${message}
-          <span class="message-time">${time}</span>
+          <div class="timestamp">${getTime()}</div>
         </div>`;
       msgInput.value = "";
+      chatBox.scrollTop = chatBox.scrollHeight;
 
-      try {
-        const res = await fetch("http://localhost:5000/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
-        });
+      const res = await fetch("/.netlify/functions/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
 
-        const data = await res.json();
-        chatBox.innerHTML += `
-          <div class="message ai">
-            ${data.reply.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
-            <span class="message-time">${time}</span>
-          </div>`;
-      } catch (error) {
-        chatBox.innerHTML += `
-          <div class="message ai">
-            Sorry, there was an error processing your request.
-            <span class="message-time">${time}</span>
-          </div>`;
-      }
-      
+      const data = await res.json();
+      chatBox.innerHTML += `
+        <div class="message ai">
+          ${data.reply}
+          <div class="timestamp">${getTime()}</div>
+        </div>`;
       chatBox.scrollTop = chatBox.scrollHeight;
     }
-
-    document.getElementById("msg").addEventListener("keypress", function(event) {
-      if (event.key === "Enter") {
-        sendMessage();
-      }
-    });
   </script>
 </body>
 </html>
