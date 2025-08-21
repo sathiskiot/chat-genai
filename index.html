@@ -1,244 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SK</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SK AI Chat</title>
   <style>
+    :root {
+      --whatsapp-bg: #e5ddd5;
+      --chat-user: #dcf8c6;
+      --chat-ai: #ffffff;
+      --header-bg: #075e54;
+      --message-text: #303030;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #ece5dd;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #128C7E;
+      min-height: 100vh;
+      padding: 1rem;
     }
-    .chat-container {
-      width: 420px;
-      height: 700px;
-      border: 1px solid #ccc;
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--whatsapp-bg);
       border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.18);
     }
-    .header {
-      padding: 14px 16px;
-      background: #25d366;
-      color: #fff;
-      font-weight: 700;
-      font-size: 20px;
+
+    .chat-header {
+      background: var(--header-bg);
+      padding: 1rem;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 1rem;
     }
-    #chat-box {
-      flex: 1;
-      padding: 14px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: #e5ddd5;
+
+    .chat-header h2 {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 500;
     }
-    .message {
-      max-width: 78%;
-      padding: 10px 12px;
-      margin: 0;
-      border-radius: 12px;
-      line-height: 1.4;
-      position: relative;
-      font-size: 14px;
-      word-wrap: break-word;
-      white-space: pre-wrap; /* preserve user newlines */
-    }
-    .user {
-      align-self: flex-end;
-      background: #dcf8c6;
-      border-bottom-right-radius: 4px;
-      text-align: left;
-    }
-    .ai {
-      align-self: flex-start;
+
+    .avatar {
+      width: 40px;
+      height: 40px;
       background: #fff;
-      border-bottom-left-radius: 4px;
-      border: 1px solid #ddd;
-      text-align: left;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
     }
-    .timestamp {
-      font-size: 11px;
-      color: gray;
-      margin-top: 6px;
-      text-align: right;
+
+    #chat-box {
+      height: calc(100vh - 180px);
+      overflow-y: auto;
+      padding: 1rem;
+      background-image: url('https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e7195b6b733d9110b408f075d.png');
+      background-repeat: repeat;
     }
-    .ai .timestamp {
-      text-align: left;
+
+    .message {
+      margin: 0.5rem 0;
+      padding: 0.8rem 1rem;
+      border-radius: 7.5px;
+      max-width: 65%;
+      position: relative;
+      color: var(--message-text);
+      box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
     }
+
+    .user {
+      background-color: var(--chat-user);
+      margin-left: auto;
+      border-top-right-radius: 0;
+    }
+
+    .ai {
+      background-color: var(--chat-ai);
+      margin-right: auto;
+      border-top-left-radius: 0;
+    }
+
+    .message::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 12px;
+      height: 12px;
+    }
+
+    .user::before {
+      right: -12px;
+      border-bottom-left-radius: 16px;
+      border-right: 12px solid transparent;
+      border-bottom: 12px solid var(--chat-user);
+    }
+
+    .ai::before {
+      left: -12px;
+      border-bottom-right-radius: 16px;
+      border-left: 12px solid transparent;
+      border-bottom: 12px solid var(--chat-ai);
+    }
+
     .input-container {
       display: flex;
-      padding: 12px;
-      border-top: 1px solid #ccc;
+      gap: 0.5rem;
+      padding: 1rem;
       background: #f0f0f0;
-      gap: 8px;
       align-items: center;
     }
+
     #msg {
       flex: 1;
-      padding: 10px 12px;
-      border-radius: 20px;
-      border: 1px solid #ccc;
-      outline: none;
-      min-height: 40px;
-      max-height: 120px;
-      resize: none;
-      font-size: 14px;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 25px;
+      font-size: 0.95rem;
+      background: white;
     }
-    button.send {
-      width: 44px;
-      height: 44px;
+
+    #msg:focus {
+      outline: none;
+    }
+
+    button {
+      width: 45px;
+      height: 45px;
+      background-color: #128C7E;
+      color: white;
       border: none;
       border-radius: 50%;
-      background: #25d366;
-      color: white;
       cursor: pointer;
-      font-size: 18px;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
+      transition: background-color 0.2s;
     }
-    button.send:hover { background: #20b358; }
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(0,0,0,0.15);
-      border-top-color: rgba(0,0,0,0.5);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      display: inline-block;
+
+    button:hover {
+      background-color: #075e54;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .muted { color:#666; font-size:12px; }
-    a { color: #0645ad; text-decoration: underline; }
+
+    .message-time {
+      font-size: 0.75rem;
+      color: #667781;
+      float: right;
+      margin-left: 1rem;
+      margin-top: 3px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+      }
+      .container {
+        border-radius: 0;
+        height: 100vh;
+      }
+      #chat-box {
+        height: calc(100vh - 130px);
+      }
+      .message {
+        max-width: 85%;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="header">SK</div>
-
-    <div id="chat-box" aria-live="polite"></div>
-
+  <div class="container">
+    <div class="chat-header">
+      <div class="avatar">SK</div>
+      <h2>AI Assistant</h2>
+    </div>
+    <div id="chat-box"></div>
     <div class="input-container">
-      <textarea id="msg" placeholder="Type a message — Shift+Enter for newline"></textarea>
-      <button class="send" id="sendBtn" title="Send">➤</button>
+      <input id="msg" placeholder="Type a message" />
+      <button onclick="sendMessage()">➤</button>
     </div>
   </div>
 
   <script>
-    // Note: This page intentionally renders HTML returned by the server inside AI messages.
-    // Only enable this if you trust the server source. If not, switch to sanitized rendering.
+    async function sendMessage() {
+      const msgInput = document.getElementById("msg");
+      const message = msgInput.value.trim();
+      if (!message) return;
 
-    function getTime() {
-      const now = new Date();
-      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+      const time = new Date().toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
 
-    function appendUserMessage(text) {
-      const chatBox = document.getElementById('chat-box');
-      const wrapper = document.createElement('div');
-      wrapper.className = 'message user';
-      // Use textContent to prevent user-supplied HTML from executing
-      wrapper.textContent = text;
-      const ts = document.createElement('div');
-      ts.className = 'timestamp';
-      ts.textContent = getTime();
-      wrapper.appendChild(ts);
-      chatBox.appendChild(wrapper);
-      scrollToBottom();
-    }
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML += `
+        <div class="message user">
+          ${message}
+          <span class="message-time">${time}</span>
+        </div>`;
+      msgInput.value = "";
 
-    function appendAIMessageRaw(html) {
-      const chatBox = document.getElementById('chat-box');
-      const wrapper = document.createElement('div');
-      wrapper.className = 'message ai';
-      // Convert newline characters to <br> so plain-text newlines are visible
-      const withLineBreaks = html.replace(/\r\n|\n/g, '<br>');
-      // Intentionally set innerHTML to execute HTML from the response
-      wrapper.innerHTML = withLineBreaks;
-      const ts = document.createElement('div');
-      ts.className = 'timestamp';
-      ts.textContent = getTime();
-      wrapper.appendChild(ts);
-      chatBox.appendChild(wrapper);
-      scrollToBottom();
-    }
+      try {
+        const res = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
 
-    function scrollToBottom() {
-      const chatBox = document.getElementById('chat-box');
+        const data = await res.json();
+        chatBox.innerHTML += `
+          <div class="message ai">
+            ${data.reply.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}
+            <span class="message-time">${time}</span>
+          </div>`;
+      } catch (error) {
+        chatBox.innerHTML += `
+          <div class="message ai">
+            Sorry, there was an error processing your request.
+            <span class="message-time">${time}</span>
+          </div>`;
+      }
+      
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function setSendingState(isSending) {
-      const btn = document.getElementById('sendBtn');
-      if (isSending) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
-      } else {
-        btn.disabled = false;
-        btn.textContent = '➤';
-      }
-    }
-
-    async function sendMessage() {
-      const msgEl = document.getElementById('msg');
-      const message = msgEl.value;
-      if (!message.trim()) return;
-      appendUserMessage(message);
-      msgEl.value = '';
-      setSendingState(true);
-
-      try {
-        const res = await fetch('/.netlify/functions/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
-        });
-
-        if (!res.ok) {
-          const text = await res.text().catch(()=>null);
-          appendAIMessageRaw('Error: ' + (text || res.statusText));
-          setSendingState(false);
-          return;
-        }
-
-        // assume server returns JSON { reply: "..."} where reply may include HTML
-        const data = await res.json();
-        const reply = (data && (data.reply ?? data.result ?? '')) + '';
-        // reply may contain HTML tags and/or newlines; we intentionally render them
-        appendAIMessageRaw(reply);
-
-      } catch (err) {
-        appendAIMessageRaw('Sorry, an error occurred connecting to the server.');
-      } finally {
-        setSendingState(false);
-      }
-    }
-
-    // Send on button click
-    document.getElementById('sendBtn').addEventListener('click', sendMessage);
-
-    // Enter to send, Shift+Enter for newline
-    document.getElementById('msg').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
+    document.getElementById("msg").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
         sendMessage();
       }
     });
-
-    // Example: pre-populate a greeting (optional)
-    // appendAIMessageRaw('Hello! This chat will render HTML from responses.<br><em>Use responsibly.</em>');
   </script>
 </body>
 </html>
