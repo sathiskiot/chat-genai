@@ -1,0 +1,30 @@
+{
+  "name": "chat-genai",
+  "version": "1.0.0",
+  "description": "Simple request-response chat app with Node.js and OpenAI GenAI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "groq-sdk": "^0.30.0",
+    "openai": "^4.56.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "openai",
+    "chatbot",
+    "genai"
+  ],
+  "author": "",
+  "license": "MIT"
+}
