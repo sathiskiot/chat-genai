@@ -5,9 +5,12 @@
 # Route the site root to the dashboard
 [[redirects]]
   from = "/"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/infra"
   to = "/infra_dashboard.html"
   status = 200
-
 # Nice path for the log analyzer
 [[redirects]]
   from = "/logs"
