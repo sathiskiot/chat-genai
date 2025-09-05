@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Infra Health Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121735; --muted:#9aa3b2; --text:#e7ecf3; 
+      --ok:#22c55e; --warn:#f59e0b; --down:#ef4444; --accent:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:radial-gradient(1200px 800px at 80% -10%,#1a2551 0%,#0b1020 35%),#0b1020;color:var(--text)}
+    header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,#0b1020 60%,rgba(11,16,32,.6));backdrop-filter:saturate(1.2) blur(4px);border-bottom:1px solid rgba(255,255,255,.06)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}
+    h1{margin:6px 0 2px;font-size:22px;letter-spacing:.2px}
+    .subtitle{color:var(--muted);font-size:12px}
+
+    .toolbar{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+    .btn{background:#1e2750;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer}
+    .btn:hover{background:#243063}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:12px}
+    .status-dot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:6px}
+    .ok{background:var(--ok)} .warn{background:var(--warn)} .down{background:var(--down)}
+
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
+    .card{grid-column:span 12;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    @media(min-width:900px){.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-12{grid-column:span 12}}
+
+    .kpi{display:flex;align-items:center;gap:12px}
+    .kpi h3{margin:0;font-size:14px;color:var(--muted)}
+    .kpi .num{font-size:26px;font-weight:700;letter-spacing:.3px}
+
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px}
+    .section-title h2{margin:0;font-size:16px}
+
+    .table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    .table th{color:var(--muted);font-size:12px;text-align:left;padding:0 10px}
+    .table td{background:#141b3d;border:1px solid rgba(255,255,255,.06);padding:10px;border-left:none;border-right:none}
+    .table tr td:first-child{border-radius:10px 0 0 10px;border-left:1px solid rgba(255,255,255,.06)}
+    .table tr td:last-child{border-radius:0 10px 10px 0;border-right:1px solid rgba(255,255,255,.06)}
+
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12)}
+    .badge.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35)}
+    .badge.warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35)}
+    .badge.down{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35)}
+
+    .progress{height:8px;background:#0f1430;border-radius:999px;overflow:hidden}
+    .bar{height:100%;width:0;transition:width .6s ease}
+
+    details summary{cursor:pointer;color:var(--muted)}
+    code{background:#0e1431;border:1px solid rgba(255,255,255,.06);padding:8px;border-radius:8px;display:block;white-space:pre;overflow:auto;max-height:280px}
+
+    .search{flex:1;display:flex;gap:8px}
+    input[type="search"]{flex:1;background:#0e1431;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text);padding:10px}
+    select{background:#0e1431;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:var(--text);padding:10px}
+
+    /* Modal for AI Log Analyzer */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000}
+    .modal-content{width:95vw;height:90vh;background:#0b1020;border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,#0e1533,#0b1020)}
+    .modal-header h3{margin:0;font-size:14px;color:#9aa3b2}
+    .modal-actions{display:flex;align-items:center;gap:8px}
+    .modal-close{background:#1e2750;border:1px solid rgba(255,255,255,.12);color:#e7ecf3;border-radius:8px;padding:6px 10px;cursor:pointer}
+    .modal-close:hover{background:#243063}
+    .modal-body{flex:1}
+    .modal-iframe{width:100%;height:100%;border:0}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Infra Health Dashboard</h1>
+    <div class="subtitle">Linux + WebLogic • Live from sample JSON • <span id="ts"></span></div>
+    <div class="toolbar">
+      <div class="pill"><span class="status-dot ok"></span>Healthy</div>
+      <div class="pill"><span class="status-dot warn"></span>Warning</div>
+      <div class="pill"><span class="status-dot down"></span>Down</div>
+      <div class="search">
+        <input id="q" type="search" placeholder="Search by hostname / server name" />
+        <select id="scope">
+          <option value="all">All</option>
+          <option value="linux">Linux only</option>
+          <option value="wl">WebLogic only</option>
+        </select>
+        <button class="btn" id="reset">Reset</button>
+        <button class="btn" id="open-log-analyzer">AI Log Analyzer</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="grid">
+    <div class="card span-4">
+      <div class="kpi"><div class="status-dot ok"></div>
+        <div>
+          <h3>Linux — Healthy</h3>
+          <div class="num" id="lin-healthy">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="card span-4">
+      <div class="kpi"><div class="status-dot warn"></div>
+        <div>
+          <h3>Linux — Warning</h3>
+          <div class="num" id="lin-warn">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="card span-4">
+      <div class="kpi"><div class="status-dot down"></div>
+        <div>
+          <h3>Linux — Down</h3>
+          <div class="num" id="lin-down">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-4">
+      <div class="kpi"><div class="status-dot ok"></div>
+        <div>
+          <h3>WebLogic — Running</h3>
+          <div class="num" id="wl-running">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="card span-4">
+      <div class="kpi"><div class="status-dot warn"></div>
+        <div>
+          <h3>WebLogic — Warning</h3>
+          <div class="num" id="wl-warning">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="card span-4">
+      <div class="kpi"><div class="status-dot down"></div>
+        <div>
+          <h3>WebLogic — Down</h3>
+          <div class="num" id="wl-down">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-12">
+      <div class="section-title">
+        <h2>Linux Servers</h2>
+        <small class="subtitle" id="lin-count"></small>
+      </div>
+      <table class="table" id="lin-table">
+        <thead>
+          <tr>
+            <th>Hostname</th><th>IP</th><th>OS</th><th>Uptime</th>
+            <th>CPU</th><th>Memory</th><th>Disk (root)</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card span-12">
+      <div class="section-title">
+        <h2>WebLogic Domain</h2>
+        <small class="subtitle" id="wl-meta"></small>
+      </div>
+      <table class="table" id="wl-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Type</th><th>Status</th><th>Heap Used</th><th>Threads</th><th>JDBC Active</th><th>JMS Msgs</th><th>Uptime</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card span-12">
+      <details>
+        <summary>Raw JSON (click to expand)</summary>
+        <code id="raw"></code>
+      </details>
+    </div>
+  </section>
+</main>
+
+<script>
+// ---------- SAMPLE DATA (paste your live JSON here) ----------
+const data = {
+  "infra_health_report": {
+    "timestamp": "2025-09-05T07:35:00Z",
+    "summary": {
+      "linux_servers": {"total":5,"healthy":3,"warning":2,"down":0},
+      "weblogic_servers": {"total":6,"running":4,"warning":1,"down":1},
+      "overall_status": "Warning"
+    },
+    "linux_servers": [
+      {
+        "hostname": "linux-app-01","ip": "192.168.1.10","os": "Red Hat Enterprise Linux 8.7","uptime": "25 days 12:45:30","cpu_usage": "35%",
+        "memory_usage": {"used": "6 GB","total": "16 GB","percent": "37%"},
+        "disk_usage": [{"mount": "/","used": "15 GB","total": "50 GB","percent": "30%"},{"mount": "/var","used": "40 GB","total": "100 GB","percent": "40%"}],
+        "processes": [{"pid": 1024, "name": "sshd", "cpu": "0.5%", "memory": "30 MB"},{"pid": 1105, "name": "weblogic", "cpu": "22%", "memory": "3.5 GB"}],
+        "status": "Healthy"
+      },
+      {
+        "hostname": "linux-app-02","ip": "192.168.1.11","os": "Red Hat Enterprise Linux 8.7","uptime": "18 days 09:12:15","cpu_usage": "55%",
+        "memory_usage": {"used": "12 GB","total": "16 GB","percent": "75%"},
+        "disk_usage": [{"mount": "/","used": "35 GB","total": "50 GB","percent": "70%"},{"mount": "/data","used": "180 GB","total": "200 GB","percent": "90%"}],
+        "processes": [{"pid": 2098, "name": "nginx", "cpu": "5%", "memory": "120 MB"},{"pid": 3101, "name": "mysqld", "cpu": "25%", "memory": "2 GB"}],
+        "status": "Warning"
+      }
+    ],
+    "weblogic_domain": {
+      "domain": "WebDomain","version": "12.2.1.4","java_version": "Java HotSpot(TM) 64-Bit Server VM (1.8.0_401-b10)",
+      "servers": [
+        {"name":"AdminServer","type":"Admin","status":"RUNNING","heap_usage":{"used":"512 MB","committed":"1024 MB","max":"2048 MB"},"threads":{"total":120,"hogging":3,"stuck":0,"idle":45},"jdbc":{"active_connections":12,"available_connections":38,"capacity":50},"jms":{"messages_current":20,"messages_pending":2,"consumers":5},"uptime":"14 days 03:45:10"},
+        {"name":"ManagedServer1","type":"Managed","status":"RUNNING","heap_usage":{"used":"768 MB","committed":"1024 MB","max":"3072 MB"},"threads":{"total":200,"hogging":5,"stuck":1,"idle":80},"jdbc":{"active_connections":18,"available_connections":32,"capacity":50},"jms":{"messages_current":42,"messages_pending":5,"consumers":8},"uptime":"21 days 10:12:30"},
+        {"name":"ManagedServer3","type":"Managed","status":"WARNING","heap_usage":{"used":"1900 MB","committed":"2048 MB","max":"2048 MB"},"threads":{"total":250,"hogging":10,"stuck":3,"idle":50},"jdbc":{"active_connections":45,"available_connections":5,"capacity":50},"jms":{"messages_current":100,"messages_pending":20,"consumers":12},"uptime":"5 days 12:20:15"},
+        {"name":"ManagedServer5","type":"Managed","status":"DOWN","heap_usage":{"used":"0 MB","committed":"0 MB","max":"0 MB"},"threads":{"total":0,"hogging":0,"stuck":0,"idle":0},"jdbc":{"active_connections":0,"available_connections":0,"capacity":0},"jms":{"messages_current":0,"messages_pending":0,"consumers":0},"uptime":"0 days 00:00:00"}
+      ]
+    }
+  }
+};
+// ---------- END SAMPLE DATA ----------
+
+const $ = (sel) => document.querySelector(sel);
+const fmtPct = (s) => parseInt(String(s).replace('%','')) || 0;
+const statusClass = (s) => {
+  const v = String(s).toLowerCase();
+  if (v.includes('down') || v.includes('shutdown')) return 'down';
+  if (v.includes('warn')) return 'warn';
+  if (v.includes('running') || v.includes('healthy') || v.includes('ok')) return 'ok';
+  return 'warn';
+};
+
+function render(){
+  const rep = data.infra_health_report;
+  $('#ts').textContent = new Date(rep.timestamp).toLocaleString();
+  // KPIs
+  $('#lin-healthy').textContent = rep.summary.linux_servers.healthy;
+  $('#lin-warn').textContent = rep.summary.linux_servers.warning;
+  $('#lin-down').textContent = rep.summary.linux_servers.down;
+  $('#wl-running').textContent = rep.summary.weblogic_servers.running;
+  $('#wl-warning').textContent = rep.summary.weblogic_servers.warning;
+  $('#wl-down').textContent = rep.summary.weblogic_servers.down;
+
+  // Linux table
+  const linBody = $('#lin-table tbody');
+  linBody.innerHTML = '';
+  rep.linux_servers.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${s.hostname}</strong></td>
+      <td>${s.ip}</td>
+      <td>${s.os}</td>
+      <td>${s.uptime}</td>
+      <td>
+        <div class="progress"><div class="bar" style="background:var(--accent);width:${fmtPct(s.cpu_usage)}%"></div></div>
+        <small class="subtitle">${s.cpu_usage}</small>
+      </td>
+      <td>
+        <div class="progress"><div class="bar" style="background:var(--warn);width:${fmtPct(s.memory_usage.percent)}%"></div></div>
+        <small class="subtitle">${s.memory_usage.used} / ${s.memory_usage.total} (${s.memory_usage.percent})</small>
+      </td>
+      <td>
+        <div class="progress"><div class="bar" style="background:var(--ok);width:${fmtPct((s.disk_usage?.[0]?.percent)||0)}%"></div></div>
+        <small class="subtitle">root ${s.disk_usage?.[0]?.used || '-'} / ${s.disk_usage?.[0]?.total || '-'} (${s.disk_usage?.[0]?.percent || '-'})</small>
+      </td>
+      <td><span class="badge ${statusClass(s.status)}">${s.status}</span></td>
+    `;
+    linBody.appendChild(tr);
+  });
+  $('#lin-count').textContent = `${rep.linux_servers.length} nodes`;
+
+  // WebLogic table
+  const wl = rep.weblogic_domain;
+  $('#wl-meta').textContent = `${wl.domain} • WLS ${wl.version} • ${wl.java_version}`;
+  const wlBody = $('#wl-table tbody');
+  wlBody.innerHTML = '';
+  wl.servers.forEach(s => {
+    const tr = document.createElement('tr');
+    const heap = s.heap_usage || {used:'-',committed:'-',max:'-'};
+    const thr = s.threads || {total:'-',stuck:'-',hogging:'-',idle:'-'};
+    const jdbc = s.jdbc || {active_connections:'-'};
+    const jms = s.jms || {messages_current:'-'};
+    tr.innerHTML = `
+      <td><strong>${s.name}</strong></td>
+      <td>${s.type}</td>
+      <td><span class="badge ${statusClass(s.status)}">${s.status}</span></td>
+      <td>${heap.used} / ${heap.max}</td>
+      <td>${thr.total} total • ${thr.stuck} stuck</td>
+      <td>${jdbc.active_connections}</td>
+      <td>${jms.messages_current}</td>
+      <td>${s.uptime}</td>
+    `;
+    wlBody.appendChild(tr);
+  });
+
+  // Raw JSON
+  $('#raw').textContent = JSON.stringify(rep, null, 2);
+}
+
+// Search & filter
+function applyFilter(){
+  const q = $('#q').value.toLowerCase().trim();
+  const scope = $('#scope').value;
+  document.querySelectorAll('#lin-table tbody tr').forEach(tr => {
+    const text = tr.textContent.toLowerCase();
+    tr.style.display = (scope === 'wl') ? 'none' : (text.includes(q) ? '' : 'none');
+  });
+  document.querySelectorAll('#wl-table tbody tr').forEach(tr => {
+    const text = tr.textContent.toLowerCase();
+    tr.style.display = (scope === 'linux') ? 'none' : (text.includes(q) ? '' : 'none');
+  });
+}
+
+document.addEventListener('input', e => {
+  if (e.target.matches('#q, #scope')) applyFilter();
+});
+$('#reset').addEventListener('click', () => { $('#q').value=''; $('#scope').value='all'; applyFilter(); });
+
+render();
+</script>
+<!-- AI Log Analyzer Modal -->
+<div id="log-modal" class="modal-backdrop" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>AI Log Analyzer</h3>
+      <div class="modal-actions">
+        <a href="log_analyzer.html" target="_blank" class="btn" style="text-decoration:none">Open in new tab</a>
+        <button id="close-log-modal" class="modal-close">Close</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <iframe id="log-iframe" class="modal-iframe" src="about:blank" title="Log Analyzer"></iframe>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+  // Modal wiring
+  (function(){
+    var openBtn = document.getElementById('open-log-analyzer');
+    var modal = document.getElementById('log-modal');
+    var closeBtn = document.getElementById('close-log-modal');
+    var frame = document.getElementById('log-iframe');
+    function open(){ modal.style.display='flex'; if (!frame.src || frame.src==='about:blank') frame.src='log_analyzer.html'; }
+    function close(){ modal.style.display='none'; }
+    if (openBtn) openBtn.addEventListener('click', open);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    modal.addEventListener('click', function(e){ if (e.target===modal) close(); });
+    document.addEventListener('keydown', function(e){ if (e.key==='Escape' && modal.style.display!=='none') close(); });
+  })();
+</script>
+
+</body>
+</html>

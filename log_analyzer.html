@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Log Analyzer — Access & WebLogic</title>
+  <style>
+    :root{--bg:#0b1021;--card:#121739;--muted:#9aa4bf;--text:#e8eefc;--accent:#6ea8fe;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b1021,#0c1228);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif}
+    header{position:sticky;top:0;z-index:5;background:rgba(11,16,33,.9);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.08)}
+    .wrap{max-width:1200px;margin:0 auto;padding:14px 20px}
+    h1{margin:2px 0 0;font-size:22px}
+    .subtitle{color:var(--muted);font-size:12px}
+    .toolbar{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .btn{background:#1a2355;border:1px solid rgba(255,255,255,.12);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+    .btn:hover{background:#1e2a66}
+    .danger{background:#3b0f17;border-color:#842029}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
+    .card{grid-column:span 12;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    .tabs{display:flex;gap:8px;margin-top:10px}
+    .tab{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);cursor:pointer;color:var(--muted)}
+    .tab.active{background:#1a2355;color:var(--text)}
+    label.small{font-size:12px;color:var(--muted)}
+    .ctrl{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#0f1533;color:var(--text)}
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin:6px 0 12px}
+    .section-title h2{margin:0;font-size:16px}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .drop{border:1px dashed rgba(255,255,255,.25);border-radius:14px;padding:14px;text-align:center;color:var(--muted)}
+    .table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px}
+    .table th{color:var(--muted);font-weight:600;text-align:left;padding:0 10px}
+    .table td{background:#0f1533;border:1px solid rgba(255,255,255,.08);padding:10px;border-left:none;border-right:none}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.15);font-size:12px;color:#d2dbf9}
+    .chip.ok{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.4)}
+    .chip.warn{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.4)}
+    .chip.err{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.4)}
+    .muted{color:var(--muted)}
+    .mini{font-size:12px}
+    canvas{width:100%;height:180px;background:#0f1533;border:1px solid rgba(255,255,255,.08);border-radius:12px}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media(max-width:900px){.two-col{grid-template-columns:1fr}}
+    textarea{width:100%;min-height:120px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0f1533;color:var(--text);padding:10px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Log Analyzer</h1>
+      <div class="subtitle">Analyze and visualize access.log and WebLogic logs locally</div>
+      <div class="tabs">
+        <div id="tab-access" class="tab active">Access Log</div>
+        <div id="tab-wl" class="tab">WebLogic Log</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Access Log Card -->
+    <section id="panel-access" class="card">
+      <div class="section-title"><h2>Access Log</h2><div class="mini muted" id="access-meta"></div></div>
+      <div class="row">
+        <input id="access-file" type="file" accept=".log,.txt" class="ctrl" />
+        <button class="btn" id="access-load">Load</button>
+        <button class="btn danger" id="access-clear">Clear</button>
+        <label class="small">or paste below</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <textarea id="access-paste" placeholder="Paste access.log lines here..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="small">From</label>
+        <input id="a-from" type="datetime-local" class="ctrl" />
+        <label class="small">To</label>
+        <input id="a-to" type="datetime-local" class="ctrl" />
+        <select id="a-method" class="ctrl">
+          <option value="">Method: Any</option>
+          <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option>
+        </select>
+        <select id="a-class" class="ctrl">
+          <option value="">Status Class: Any</option>
+          <option value="2">2xx</option><option value="3">3xx</option><option value="4">4xx</option><option value="5">5xx</option>
+        </select>
+        <input id="a-search" class="ctrl" placeholder="Filter: path/ip/ua/referrer contains" />
+        <button id="a-apply" class="btn">Apply</button>
+      </div>
+
+      <div class="two-col" style="margin-top:12px">
+        <div>
+          <div class="mini muted">Requests per hour</div>
+          <canvas id="a-time"></canvas>
+        </div>
+        <div>
+          <div class="mini muted">Status class distribution</div>
+          <canvas id="a-status"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="background:#0f1533;margin-top:12px">
+        <div class="section-title"><h2 style="font-size:14px">AI Insights (Access)</h2><button id="a-ai-run" class="btn">Run AI Insights</button></div>
+        <div id="a-ai" class="mini"></div>
+      </div>
+
+      <div class="two-col" style="margin-top:12px">
+        <div>
+          <div class="mini muted">Top endpoints</div>
+          <table class="table" id="a-top-paths"><thead><tr><th>Path</th><th>Hits</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div>
+          <div class="mini muted">Top IPs</div>
+          <table class="table" id="a-top-ips"><thead><tr><th>IP</th><th>Hits</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="mini muted">Results</div>
+        <table class="table" id="a-table"><thead><tr><th>Time</th><th>IP</th><th>Method</th><th>Path</th><th>Status</th><th>Size</th><th>Referrer</th><th>UA</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- WebLogic Log Card -->
+    <section id="panel-wl" class="card" style="display:none">
+      <div class="section-title"><h2>WebLogic Log</h2><div class="mini muted" id="wl-meta"></div></div>
+      <div class="row">
+        <input id="wl-file" type="file" accept=".log,.txt" class="ctrl" />
+        <button class="btn" id="wl-load">Load</button>
+        <button class="btn danger" id="wl-clear">Clear</button>
+        <label class="small">or paste below</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <textarea id="wl-paste" placeholder="Paste weblogic.log lines here..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label class="small">From</label>
+        <input id="w-from" type="datetime-local" class="ctrl" />
+        <label class="small">To</label>
+        <input id="w-to" type="datetime-local" class="ctrl" />
+        <select id="w-level" class="ctrl">
+          <option value="">Level: Any</option>
+          <option>ERROR</option><option>WARN</option><option>INFO</option><option>DEBUG</option>
+        </select>
+        <input id="w-comp" class="ctrl" placeholder="Component contains" />
+        <input id="w-search" class="ctrl" placeholder="Message contains" />
+        <button id="w-apply" class="btn">Apply</button>
+      </div>
+
+      <div class="two-col" style="margin-top:12px">
+        <div>
+          <div class="mini muted">Events per hour</div>
+          <canvas id="w-time"></canvas>
+        </div>
+        <div>
+          <div class="mini muted">Levels</div>
+          <canvas id="w-levels"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="background:#0f1533;margin-top:12px">
+        <div class="section-title"><h2 style="font-size:14px">AI Insights (WebLogic)</h2><button id="w-ai-run" class="btn">Run AI Insights</button></div>
+        <div id="w-ai" class="mini"></div>
+      </div>
+
+      <div class="two-col" style="margin-top:12px">
+        <div>
+          <div class="mini muted">Top components</div>
+          <table class="table" id="w-top-comp"><thead><tr><th>Component</th><th>Events</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div>
+          <div class="mini muted">Top messages</div>
+          <table class="table" id="w-top-msg"><thead><tr><th>Message</th><th>Count</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="mini muted">Results</div>
+        <table class="table" id="w-table"><thead><tr><th>Time</th><th>Level</th><th>Component</th><th>Message</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Tabs
+    document.getElementById('tab-access').onclick = ()=>{ sel('panel-access').style.display=''; sel('panel-wl').style.display='none'; setActive('tab-access') };
+    document.getElementById('tab-wl').onclick     = ()=>{ sel('panel-access').style.display='none'; sel('panel-wl').style.display=''; setActive('tab-wl') };
+    function sel(id){ return document.getElementById(id); }
+    function setActive(id){ ['tab-access','tab-wl'].forEach(t=> sel(t).classList.toggle('active', t===id)); }
+
+    // Helpers
+    function readFile(input){
+      return new Promise((resolve)=>{
+        if (!input.files || !input.files[0]) return resolve('');
+        const fr = new FileReader();
+        fr.onload = ()=> resolve(String(fr.result||''));
+        fr.readAsText(input.files[0]);
+      });
+    }
+    function parseDateApache(s){
+      // [04/Sep/2025:05:06:22 +0530]
+      const m = s.match(/(\d{2})\/(\w{3})\/(\d{4}):(\d{2}):(\d{2}):(\d{2}) ([+-]\d{4})/);
+      if(!m) return null;
+      const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      const dt = new Date(Date.UTC(+m[3], months[m[2]], +m[1], +m[4], +m[5], +m[6]));
+      // ignore tz offset beyond UTC for grouping purposes
+      return dt;
+    }
+    function fmtTs(d){ return d? new Date(d).toLocaleString():'' }
+    function bucketHour(d){ const x = new Date(d); x.setMinutes(0,0,0); return x.getTime(); }
+    function tally(arr, pick){ const map = new Map(); for(const x of arr){ const k = pick(x); map.set(k,(map.get(k)||0)+1) } return [...map.entries()].sort((a,b)=>b[1]-a[1]); }
+    function drawBars(canvas, data, opts){
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width = canvas.clientWidth; const H = canvas.height = canvas.clientHeight;
+      ctx.clearRect(0,0,W,H);
+      const pad = 24; const n = data.length || 1; const max = Math.max(1, ...data.map(d=>d.v));
+      const bw = (W - pad*2) / n; let i=0;
+      ctx.fillStyle = '#16204a'; ctx.fillRect(0,0,W,H);
+      data.forEach(d=>{
+        const x = pad + i*bw + 4; const h = (H - pad*2) * (d.v/max); const y = H - pad - h; const w = bw - 8;
+        ctx.fillStyle = opts.color || '#6ea8fe'; ctx.fillRect(x,y,w,h);
+        if (bw>36){ ctx.fillStyle='#cfd8ff'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText(String(d.v), x+w/2, y-4) }
+        i++;
+      });
+    }
+
+    function chip(text, cls){ return `<span class="chip ${cls||''}">${text}</span>` }
+    function aiList(el, items){
+      el.innerHTML = '';
+      if (!items.length){ el.innerHTML = '<div class="muted">No notable issues detected.</div>'; return; }
+      const ul = document.createElement('div');
+      items.forEach(it=>{
+        const row = document.createElement('div');
+        row.style.margin = '6px 0';
+        const sev = it.sev==='high'?'err': it.sev==='med'?'warn':'ok';
+        row.innerHTML = `${chip(it.title, sev)} <span class="muted">(${Math.round((it.conf||0)*100)}% conf.)</span><br/><div style="margin-top:4px">${it.detail}</div>`;
+        ul.appendChild(row);
+      });
+      el.appendChild(ul);
+    }
+
+    // Access Log
+    const accessState = { rows: [], filtered: [] };
+    const accessRe = /^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) ([^"]*?) (\S+)" (\d{3}) (\S+) "([^"]*)" "([^"]*)"$/;
+    function parseAccess(text){
+      const lines = String(text).split(/\r?\n/); const rows=[];
+      for(const line of lines){ if(!line.trim()) continue; const m=line.match(accessRe); if(!m) continue; rows.push({
+        ip:m[1], tsRaw:m[2], ts:parseDateApache(m[2]), method:m[3], path:m[4], proto:m[5], status:+m[6], size:m[7]==='-'?0:+m[7], ref:m[8], ua:m[9]
+      }) }
+      accessState.rows = rows; sel('access-meta').textContent = `${rows.length} lines parsed`;
+      applyAccessFilters();
+    }
+    function applyAccessFilters(){
+      const from = sel('a-from').value ? new Date(sel('a-from').value) : null;
+      const to   = sel('a-to').value ? new Date(sel('a-to').value) : null;
+      const method = sel('a-method').value; const cls = sel('a-class').value; const q = sel('a-search').value.toLowerCase();
+      const rows = accessState.rows.filter(r=>{
+        if (from && r.ts && r.ts < from) return false; if (to && r.ts && r.ts > to) return false;
+        if (method && r.method!==method) return false;
+        if (cls){ const c = Math.floor(r.status/100); if (String(c)!==String(cls)) return false; }
+        if (q){ const hay = `${r.path} ${r.ip} ${r.ua} ${r.ref}`.toLowerCase(); if (!hay.includes(q)) return false; }
+        return true;
+      });
+      accessState.filtered = rows;
+      renderAccess();
+    }
+    function renderAccess(){
+      const tb = sel('a-table').querySelector('tbody'); tb.innerHTML='';
+      accessState.filtered.slice(0,500).forEach(r=>{
+        const tr=document.createElement('tr');
+        const klass = r.status>=500?'chip err': r.status>=400?'chip warn':'chip ok';
+        tr.innerHTML = `<td>${fmtTs(r.ts)}</td><td>${r.ip}</td><td>${r.method}</td><td>${r.path}</td><td><span class="${klass}">${r.status}</span></td><td>${r.size}</td><td>${r.ref||'-'}</td><td>${r.ua||'-'}</td>`;
+        tb.appendChild(tr);
+      });
+      // Charts
+      const byHour = tally(accessState.filtered, r=> bucketHour(r.ts));
+      drawBars(sel('a-time'), byHour.slice(-24).map(([k,v])=>({k,v})), {color:'#6ea8fe'});
+      const byClass = [[2,0],[3,0],[4,0],[5,0]]; accessState.filtered.forEach(r=>{ const c=Math.floor(r.status/100); const idx=c-2; if (idx>=0&&idx<4) byClass[idx][1]++; });
+      drawBars(sel('a-status'), byClass.map(([k,v])=>({k,v})), {color:'#f59e0b'});
+      // Tops
+      const topPaths = tally(accessState.filtered, r=> r.path).slice(0,10);
+      const topIps = tally(accessState.filtered, r=> r.ip).slice(0,10);
+      fillTopTable('a-top-paths', topPaths);
+      fillTopTable('a-top-ips', topIps);
+      // Auto AI run
+      runAccessAI();
+    }
+    function fillTopTable(id, entries){
+      const tb = sel(id).querySelector('tbody'); tb.innerHTML='';
+      entries.forEach(([k,v])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${k}</td><td>${v}</td>`; tb.appendChild(tr); });
+    }
+    sel('access-load').onclick = async ()=>{ const t = await readFile(sel('access-file')); parseAccess(t || sel('access-paste').value); };
+    sel('access-clear').onclick = ()=>{ sel('access-paste').value=''; accessState.rows=[]; accessState.filtered=[]; renderAccess(); sel('access-meta').textContent=''; };
+    sel('a-apply').onclick = applyAccessFilters;
+    sel('a-ai-run').onclick = ()=> runAccessAI(true);
+
+    function runAccessAI(force){
+      const items = [];
+      const rows = accessState.filtered.length ? accessState.filtered : accessState.rows;
+      if (!rows.length){ aiList(sel('a-ai'), []); return; }
+      const n = rows.length;
+      // 5xx surge
+      const byHour = tally(rows, r=> bucketHour(r.ts));
+      const last = byHour.slice(-6).map(([t,v])=>v);
+      const slope = last.length>=2 ? (last[last.length-1]-last[0])/(last.length-1) : 0;
+      const lastVal = last[last.length-1]||0; const avg = last.length? last.reduce((a,b)=>a+b,0)/last.length : 0;
+      const rate5xx = rows.filter(r=>r.status>=500).length / n;
+      if (rate5xx>0.05 || (slope>0 && lastVal>avg*1.5 && lastVal>=5)){
+        items.push({sev:'high', conf: Math.min(0.95, rate5xx*2 + (slope>0?0.2:0)), title:'Escalating 5xx errors', detail:`${Math.round(rate5xx*100)}% of requests are 5xx; recent hour shows ${lastVal} vs avg ${avg.toFixed(1)}. Investigate upstream/backends.`});
+      }
+      // 404 hot paths
+      const only404 = rows.filter(r=>r.status===404);
+      const top404 = tally(only404, r=> r.path)[0];
+      if (top404 && top404[1]>=10){ items.push({sev:'med', conf:0.7, title:'Missing or broken endpoint/assets', detail:`Path ${top404[0]} returned 404 ${top404[1]} times.`}); }
+      // Timeouts / slow
+      const timeoutPct = rows.filter(r=> r.status===408 || r.status===504).length/n;
+      if (timeoutPct>0.02){ items.push({sev:'med', conf:0.6, title:'Client/server timeouts trending', detail:`${Math.round(timeoutPct*100)}% 408/504 responses. Check network/backends.`}); }
+      // Unauthorized/Forbidden
+      const authPct = rows.filter(r=> r.status===401 || r.status===403).length/n;
+      if (authPct>0.1){ items.push({sev:'low', conf:0.55, title:'High unauthorized/forbidden rate', detail:`${Math.round(authPct*100)}% 401/403. Possible auth misconfig or probing.`}); }
+      // Rate limiting
+      const rl = rows.filter(r=> r.status===429).length; if (rl>=5){ items.push({sev:'low', conf:0.6, title:'Rate limiting triggered', detail:`HTTP 429 occurred ${rl} times. Consider tuning thresholds or caching.`}); }
+      // DDoS-like IP concentration
+      const topIp = tally(rows, r=> r.ip)[0];
+      if (topIp && topIp[1]/n >= 0.5 && n>=50){ items.push({sev:'high', conf:0.8, title:'Traffic dominated by a single IP', detail:`IP ${topIp[0]} accounts for ${(topIp[1]/n*100).toFixed(1)}% of requests.`}); }
+      // Static asset 5xx/404
+      const staticErr = rows.filter(r=> /(\.js|\.css|\.png|\.jpg|\.svg|\.ico)$/i.test(r.path) && (r.status>=500 || r.status===404));
+      if (staticErr.length>=10){ items.push({sev:'med', conf:0.65, title:'Static asset errors', detail:`${staticErr.length} errors on static assets. Check deployment artifacts and CDN.`}); }
+      aiList(sel('a-ai'), items);
+    }
+
+    // WebLogic Log
+    const wlState = { rows: [], filtered: [] };
+    const wlRe = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+(ERROR|WARN|INFO|DEBUG)\s+\[([^\]]+)\]\s+(.*)$/;
+    function parseWl(text){
+      const lines = String(text).split(/\r?\n/); const rows=[];
+      for(const line of lines){ if(!line.trim()) continue; const m=line.match(wlRe); if(!m) continue; rows.push({ ts:new Date(m[1]), level:m[2], comp:m[3], msg:m[4] }); }
+      wlState.rows = rows; sel('wl-meta').textContent = `${rows.length} lines parsed`;
+      applyWlFilters();
+    }
+    function applyWlFilters(){
+      const from = sel('w-from').value ? new Date(sel('w-from').value) : null;
+      const to   = sel('w-to').value ? new Date(sel('w-to').value) : null;
+      const level = sel('w-level').value; const comp = sel('w-comp').value.toLowerCase(); const q = sel('w-search').value.toLowerCase();
+      const rows = wlState.rows.filter(r=>{
+        if (from && r.ts < from) return false; if (to && r.ts > to) return false;
+        if (level && r.level!==level) return false;
+        if (comp && !r.comp.toLowerCase().includes(comp)) return false;
+        if (q && !r.msg.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      wlState.filtered = rows;
+      renderWl();
+    }
+    function renderWl(){
+      const tb = sel('w-table').querySelector('tbody'); tb.innerHTML='';
+      wlState.filtered.slice(0,500).forEach(r=>{
+        const chipCls = r.level==='ERROR'?'chip err': r.level==='WARN'?'chip warn':'chip ok';
+        const tr=document.createElement('tr'); tr.innerHTML = `<td>${fmtTs(r.ts)}</td><td><span class="${chipCls}">${r.level}</span></td><td>${r.comp}</td><td>${r.msg}</td>`; tb.appendChild(tr);
+      });
+      const byHour = tally(wlState.filtered, r=> bucketHour(r.ts));
+      drawBars(sel('w-time'), byHour.slice(-24).map(([k,v])=>({k,v})), {color:'#6ea8fe'});
+      const byLevel = tally(wlState.filtered, r=> r.level);
+      drawBars(sel('w-levels'), byLevel.map(([k,v])=>({k,v})), {color:'#f59e0b'});
+      fillTopTable('w-top-comp', tally(wlState.filtered, r=> r.comp).slice(0,10));
+      fillTopTable('w-top-msg', tally(wlState.filtered, r=> r.msg).slice(0,10));
+      runWlAI();
+    }
+    sel('w-apply').onclick = applyWlFilters;
+    sel('wl-load').onclick = async ()=>{ const t = await readFile(sel('wl-file')); parseWl(t || sel('wl-paste').value); };
+    sel('wl-clear').onclick = ()=>{ sel('wl-paste').value=''; wlState.rows=[]; wlState.filtered=[]; renderWl(); sel('wl-meta').textContent=''; };
+    sel('w-ai-run').onclick = ()=> runWlAI(true);
+
+    function runWlAI(force){
+      const items = [];
+      const rows = wlState.filtered.length ? wlState.filtered : wlState.rows;
+      if (!rows.length){ aiList(sel('w-ai'), []); return; }
+      const n = rows.length; const msgs = rows.map(r=> r.msg);
+      function countContains(pattern){ return msgs.filter(m=> pattern.test(m)).length }
+      // Memory pressure
+      const oom = countContains(/OutOfMemoryError/i);
+      const gcSlow = rows.filter(r=> /Full GC took (\d+(\.\d+)?)s/i.test(r.msg)).length;
+      if (oom>0){ items.push({sev:'high', conf:0.95, title:'OutOfMemoryError detected', detail:`${oom} OOM errors. Immediate memory pressure; take heap dump, raise Xmx, analyze leaks.`}); }
+      else if (gcSlow>=2){ items.push({sev:'med', conf:0.75, title:'Prolonged Full GC events', detail:`${gcSlow} slow Full GC events. Risk of memory pressure; check heap/GC tuning.`}); }
+      // JDBC pool
+      const leaks = countContains(/Connection leak detected/i);
+      if (leaks>=1){ items.push({sev:'high', conf:0.85, title:'JDBC connection leaks', detail:`${leaks} leak warnings. Risk of pool exhaustion; enable leak profiling, check unclosed resources.`}); }
+      // JMS delivery
+      const jmsFail = countContains(/Message delivery failed/i);
+      if (jmsFail>=3){ items.push({sev:'med', conf:0.7, title:'JMS delivery failures', detail:`${jmsFail} JMS failures. Risk of backlog; check consumers and broker health.`}); }
+      // Threads
+      const hog = countContains(/Hogging thread/i); const stuck = countContains(/stuck/i);
+      if (hog+stuck>=2){ items.push({sev:'med', conf:0.7, title:'Thread pool contention', detail:`Hogging/stuck thread indicators (${hog} hogging, ${stuck} stuck). Consider thread dumps and tuning WorkManagers.`}); }
+      // Port bind issues
+      const bind = countContains(/Failed to bind to port/i);
+      if (bind>=1){ items.push({sev:'high', conf:0.8, title:'Port binding failures', detail:`${bind} bind failures on server port. Possible duplicate process or OS limit.`}); }
+      // Cluster
+      const cluster = countContains(/unreachable|failed.*cluster/i);
+      if (cluster>=1){ items.push({sev:'med', conf:0.6, title:'Cluster reachability issues', detail:`${cluster} cluster warnings. Check network/firewall between members.`}); }
+      // Auth failures
+      const authFail = countContains(/Authentication failed/i);
+      if (authFail>=5){ items.push({sev:'low', conf:0.6, title:'Repeated authentication failures', detail:`${authFail} login failures. Possible brute force or misconfig.`}); }
+      // Deployments
+      const depFail = countContains(/Deployment failed|failed due to/i);
+      if (depFail>=1){ items.push({sev:'med', conf:0.65, title:'Deployment failures detected', detail:`${depFail} deployment errors. Validate datasource/config and app packaging.`}); }
+      aiList(sel('w-ai'), items);
+    }
+
+    // Convenience: attempt to preload local files if served from same directory and accessible via fetch.
+    (async function tryPreload(){
+      try{
+        const u = new URL(location.href);
+        if (u.protocol.startsWith('http')){
+          const a = await fetch('access.log'); if (a.ok) parseAccess(await a.text());
+          const w = await fetch('weblogic.log'); if (w.ok) parseWl(await w.text());
+        }
+      }catch(e){}
+    })();
+  </script>
+</body>
+</html>

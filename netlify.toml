@@ -1,7 +1,27 @@
 [build]
-  functions = "functions"
   publish = "."
+  command = ""
 
-[dev]
-  functions = "functions"
-  port = 8888
+# Route the site root to the dashboard
+[[redirects]]
+  from = "/"
+  to = "/infra_dashboard.html"
+  status = 200
+
+# Nice path for the log analyzer
+[[redirects]]
+  from = "/logs"
+  to = "/log_analyzer.html"
+  status = 200
+
+# Disable caching for frequently changing data files
+[[headers]]
+  for = "/*.json"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/*.log"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
