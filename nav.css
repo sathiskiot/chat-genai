@@ -1,0 +1,101 @@
+/* Global site header (reusable across pages) */
+:root {
+  --site-header-h: 56px;
+  --site-bg: #0b1020;
+  --site-text: #e7ecf3;
+  --site-muted: #9aa3b2;
+  --site-border: rgba(255,255,255,.08);
+  --site-accent: #2f7bfd;
+}
+
+/* Push content below the sticky header */
+body { padding-top: var(--site-header-h); }
+
+.site-header {
+  position: sticky; top: 0; z-index: 1000;
+  background: linear-gradient(180deg, rgba(11,16,32,.96), rgba(11,16,32,.82));
+  backdrop-filter: saturate(1.1) blur(8px);
+  border-bottom: 1px solid var(--site-border);
+}
+.site-header .site-wrap {
+  max-width: 1200px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.site-header .brand { color: var(--site-text); text-decoration: none; font-weight: 800; letter-spacing: .2px; }
+.site-header .brand:hover { color: #fff; }
+
+.site-header .nav-toggle {
+  display: none; background: transparent; color: var(--site-text);
+  border: 1px solid var(--site-border); border-radius: 10px; padding: 8px 10px;
+  cursor: pointer;
+}
+
+.site-header .nav-menu { display: flex; gap: 6px; align-items: center; }
+.site-header .nav-menu a {
+  color: var(--site-muted); text-decoration: none; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid transparent; transition: background .2s ease, color .2s ease, transform .2s ease, border-color .2s ease;
+}
+.site-header .nav-menu a:hover { color: var(--site-text); background: rgba(47,123,253,.12); border-color: rgba(47,123,253,.25); transform: translateY(-1px); }
+.site-header .nav-menu a.active { color: #dfe8ff; background: rgba(47,123,253,.18); border-color: rgba(47,123,253,.35); }
+
+/* Mobile */
+@media (max-width: 860px) {
+  .site-header .nav-toggle { display: inline-flex; align-items: center; gap: 6px; }
+  .site-header .nav-menu { display: none; position: absolute; left: 0; right: 0; top: var(--site-header-h);
+    background: linear-gradient(180deg, rgba(11,16,32,.98), rgba(11,16,32,.95));
+    border-bottom: 1px solid var(--site-border);
+    padding: 8px; flex-direction: column; gap: 4px;
+  }
+  .site-header.open .nav-menu { display: flex; }
+  .site-header .nav-menu a { width: 100%; padding: 10px 12px; }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .site-header .site-wrap { gap: 8px; padding: 10px 12px; }
+  .site-header .brand { font-size: 14px; }
+  .site-header .nav-toggle { padding: 6px 8px; border-radius: 8px; }
+  .site-header .nav-menu a { padding: 10px; font-size: 14px; }
+}
+
+/* Very small devices */
+@media (max-width: 360px) {
+  .site-header .brand { font-size: 13px; }
+  .site-header .nav-menu a { font-size: 13px; }
+}
+
+/* Ensure legacy page toolbars are not sticky once global header exists */
+body.site-has-global-header .nav,
+body.site-has-global-header .topbar,
+body.site-has-global-header header:not(.site-header) {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+}
+
+/* Floating Chat iframe (bottom-right) */
+.chat-toggle {
+  position: fixed; right: 16px; bottom: 16px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--site-accent); color: #fff; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 12px 28px rgba(47,123,253,.35);
+  z-index: 99995; font-weight: 800; letter-spacing: .2px;
+}
+.chat-toggle:hover { transform: translateY(-1px); }
+
+.chat-dock {
+  position: fixed; right: 16px; bottom: 84px;
+  width: 360px; max-width: 92vw; height: 520px; max-height: 72vh;
+  background: linear-gradient(180deg,#11161e,#0e1520);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.45); overflow: hidden;
+  z-index: 99994; opacity: 0; transform: translateY(12px);
+  pointer-events: none; transition: opacity .25s, transform .25s;
+}
+.chat-dock.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.chat-dock iframe { width: 100%; height: 100%; border: 0; display: block; background: #0e1520; }
+
+@media (max-width: 480px) {
+  .chat-dock { right: 4vw; width: 92vw; height: 60vh; bottom: 84px; }
+}

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecasting</title>
+  <link rel="stylesheet" href="nav.css" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --panel: #11161e;
+      --panel-2: #0e131a;
+      --text: #e6f0ff;
+      --muted: #9bb3d1;
+      --accent: #2f7bfd;
+      --accent-2: #5bffb7;
+      --danger: #ff5468;
+      --warn: #ffd166;
+      --shadow: 0 10px 30px rgba(0, 208, 255, 0.12);
+      --radius: 14px;
+    }
+
+    *{ box-sizing: border-box }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial;
+      background: radial-gradient(1200px 800px at 80% -20%, rgba(0, 209, 255, 0.08), transparent),
+                  radial-gradient(1000px 700px at -10% 100%, rgba(91, 255, 183, 0.06), transparent),
+                  var(--bg);
+      color: #04214c;
+    }
+
+    .nav {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 22px;
+      background: linear-gradient(180deg, rgba(10,14,20,0.95), rgba(10,14,20,0.85));
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 209, 255, 0.12);
+    }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .brand .dot { width:12px; height:12px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #bff, var(--accent)); box-shadow: 0 0 12px rgba(47,123,253,.6); }
+    .nav a { text-decoration:none; color: var(--muted); margin-left:12px; padding:8px 12px; border-radius:10px; transition: background .2s ease, color .2s ease, transform .2s ease; }
+    .nav a:hover, .nav a.active { color: var(--text); background: rgba(0, 209, 255, 0.12); transform: translateY(-1px); }
+
+    .dash {max-width: 1200px;margin: 24px auto 60px;padding: 0 18px;/* display: grid; */grid-template-columns: 240px 1fr;gap: 18px;}
+    @media (max-width: 980px) { .dash { grid-template-columns: 1fr; } }
+    .sidebar { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,0.06); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; height: fit-content; position: sticky; top: 70px; }
+    .side-title { font-weight: 800; color: #cfe3ff; margin: 4px 4px 10px; }
+    .side-nav { display:flex; flex-direction:column; gap:8px; }
+    .side-link { cursor:pointer; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius: 10px; color: var(--muted); border:1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); transition: background .2s ease, transform .2s ease, color .2s ease; }
+    .side-link:hover { background: rgba(0,209,255,0.08); transform: translateY(-1px); }
+    .side-link.active { background: rgba(0,209,255,0.12); color: var(--text); border-color: rgba(0,209,255,0.25); }
+    .date-filter { margin-top: 12px; display:flex; flex-direction:column; gap:6px; }
+    .date-filter label { font-size: 12px; color: var(--muted); }
+    .date-filter select { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 10px; font-size: 13px; color: var(--text); }
+    .workspace { display:grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+    @media (max-width: 980px) { .workspace { grid-template-columns: 1fr; } }
+    .workspace { grid-template-columns: 1fr; }
+
+    .card { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; animation: fadeIn .5s ease both; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0, 209, 255, 0.18); border-color: rgba(0,209,255,0.25); }
+    .card h2, .card h3 { margin: 4px 4px 8px; font-size: 18px; color: #d8e8ff; }
+    .subtle {color: #0d3668;font-size: 13px;margin: 0 4px 14px;}
+    .metrics-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (max-width: 720px) { .metrics-grid { grid-template-columns: 1fr; } }
+    .mcard { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; }
+    .mcard h3 { font-size: 14px; color: #cfe3ff; margin: 0 0 8px; }
+    .block-controls { display:flex; justify-content:flex-end; margin:-4px 0 6px; }
+    .block-controls select { background: rgba(255,255,255,0.04); color: var(--text); border:1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+    /* Stacked metrics */
+    .metrics-stack { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .metric { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; }
+    .metric-header { display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+    .metric-header h3 { margin: 0; font-size: 15px; color: #d8e8ff; }
+    .controls select { background: rgba(255,255,255,0.04); color: var(--text); border:1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+    .quick-stats { display:flex; flex-wrap:wrap; gap:8px; margin: 8px 0 6px; }
+    .stat-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); font-size:12px; color:#cfe3ff; }
+    .stat-chip .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+    .dot.blue { background:#2f7bfd; }
+    .dot.green { background:#5bffb7; }
+    .dot.yellow { background:#ffd166; }
+    .dot.red { background:#ff5468; }
+
+    /* Risk enhancements */
+    .risk-progress { background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius: 10px; height: 10px; overflow:hidden; }
+    .risk-fill { height:100%; width: 40%; background: linear-gradient(90deg, #33d17a, #ffd166, #ff5468); box-shadow: 0 8px 18px rgba(255,84,104,0.25); transition: width .6s ease; }
+    .risk-head { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 8px; }
+    .risk-kpis { display:flex; gap: 8px; flex-wrap:wrap; }
+    .rk { display:flex; gap:6px; align-items:center; padding:6px 10px; border-radius:10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); font-size:12px; color:#cfe3ff; }
+    .small { font-size: 11px; color: #a9c3e6; }
+    .bar-track { position: relative; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+    .bar-fill { position: absolute; top:0; left:0; height:100%; border-radius:999px; background: #5bffb7; }
+
+    .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 640px) { .risk-grid { grid-template-columns: 1fr; } }
+    .risk { display:flex; flex-direction:column; gap:6px; padding:14px; border-radius:12px; border: 1px dashed #e0e8f6; transition: transform .2s ease, background .2s ease; }
+    .risk:hover { transform: translateY(-3px); }
+    .risk.low {background: #edf9f6;border-color: #720c0c;}
+    .risk.med { background: #fff8e6; border-color:#fde7a2; }
+    .risk.high { background: #ffeef1; border-color:#ffc2ce; }
+    .risk .label { font-weight: 700; letter-spacing: 0.3px; }
+    .risk .percent { font-size: 26px; font-weight: 800; }
+
+    .hint { margin: 12px 4px 0; color: #6c7e99; font-size: 12px; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
+  </style>
+  <script defer src="nav.js"></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-wrap">
+    <a class="brand" href="index.html">SRE AI LensView</a>
+    <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+    <nav class="nav-menu" aria-label="Primary">
+      <a href="infra-dashboard.html">Dashboard</a>
+      <a href="logs-analzer.html">Logs Analyzer</a>
+      <a href="anomaly.html" class="active">Anomaly Detection</a>
+      <a href="forecasting.html">Forecasting</a>
+      <a href="priorities-dashboard.html">Remediate Issue</a>
+    </nav>
+  </div>
+</header>
+  
+
+  <main class="dash">
+    <section class="workspace">
+      <!-- AI Forecasting Module -->
+      <section id="module-ai" class="card" style="grid-column: 1 / -1;">
+        <h2>AI Forecasting</h2>
+        <p class="subtle">Observed vs forecast (dashed) for key metrics</p>
+        <div class="metrics-stack">
+          <div class="metric">
+            <div class="metric-header">
+              <h3>CPU</h3>
+              <div class="controls"><select id="range_cpu"><option value="15">15m</option><option value="30" selected>30m</option><option value="60">1h</option></select></div>
+            </div>
+            <div class="quick-stats" id="stats_cpu">
+              <span class="stat-chip"><span class="dot blue"></span><span>Current</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot green"></span><span>Avg</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot yellow"></span><span>Change</span><strong> -- </strong></span>
+            </div>
+            <canvas id="fc_cpu" height="120"></canvas>
+          </div>
+          <div class="metric">
+            <div class="metric-header">
+              <h3>Requests</h3>
+              <div class="controls"><select id="range_rps"><option value="15">15m</option><option value="30" selected>30m</option><option value="60">1h</option></select></div>
+            </div>
+            <div class="quick-stats" id="stats_rps">
+              <span class="stat-chip"><span class="dot blue"></span><span>Current</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot green"></span><span>Avg</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot yellow"></span><span>Change</span><strong> -- </strong></span>
+            </div>
+            <canvas id="fc_rps" height="120"></canvas>
+          </div>
+          <div class="metric">
+            <div class="metric-header">
+              <h3>Disk Space</h3>
+              <div class="controls"><select id="range_disk"><option value="15">15m</option><option value="30" selected>30m</option><option value="60">1h</option></select></div>
+            </div>
+            <div class="quick-stats" id="stats_disk">
+              <span class="stat-chip"><span class="dot blue"></span><span>Current</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot green"></span><span>Avg</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot yellow"></span><span>Change</span><strong> -- </strong></span>
+            </div>
+            <canvas id="fc_disk" height="120"></canvas>
+          </div>
+          <div class="metric">
+            <div class="metric-header">
+              <h3>Memory</h3>
+              <div class="controls"><select id="range_mem"><option value="15">15m</option><option value="30" selected>30m</option><option value="60">1h</option></select></div>
+            </div>
+            <div class="quick-stats" id="stats_mem">
+              <span class="stat-chip"><span class="dot blue"></span><span>Current</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot green"></span><span>Avg</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot yellow"></span><span>Change</span><strong> -- </strong></span>
+            </div>
+            <canvas id="fc_mem" height="120"></canvas>
+          </div>
+          <div class="metric">
+            <div class="metric-header">
+              <h3>Process Load</h3>
+              <div class="controls"><select id="range_proc"><option value="15">15m</option><option value="30" selected>30m</option><option value="60">1h</option></select></div>
+            </div>
+            <div class="quick-stats" id="stats_proc">
+              <span class="stat-chip"><span class="dot blue"></span><span>Current</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot green"></span><span>Avg</span><strong> -- </strong></span>
+              <span class="stat-chip"><span class="dot yellow"></span><span>Change</span><strong> -- </strong></span>
+            </div>
+            <canvas id="fc_proc" height="140"></canvas>
+          </div>
+        </div>
+        <p class="hint">Auto-refreshes every ~5 seconds (simulated).</p>
+      </section>
+      <section class="card" style="grid-column: 1 / -1;">
+        <h2>Risk Analysis</h2>
+        <div class="risk-head">
+          <div class="subtle">Overall risk outlook and uncertainty</div>
+          <div class="risk-kpis">
+            <div class="rk"><span class="dot red"></span>High: <strong id="rkHigh">20%</strong></div>
+            <div class="rk"><span class="dot yellow"></span>Medium: <strong id="rkMed">35%</strong></div>
+            <div class="rk"><span class="dot green"></span>Low: <strong id="rkLow">45%</strong></div>
+          </div>
+        </div>
+        <div class="risk-progress"><div class="risk-fill" id="riskFill" style="width:40%"></div></div>
+        <div style="margin-top:12px; display:grid; grid-template-columns: 1.2fr 1fr; gap:14px;">
+          <div class="card" style="margin:0;">
+            <h3>Risk Trend</h3>
+            <canvas id="riskTrend" height="120"></canvas>
+          </div>
+          <div class="card" style="margin:0;">
+            <h3>Uncertainty</h3>
+            <canvas id="uncertaintyChart" height="120"></canvas>
+          </div>
+        </div>
+        <div class="risk-grid">
+          <div class="risk low" id="lowRisk">
+            <div class="label" style="color: var(--accent-2)">Low</div>
+            <div class="percent" id="lowPct">45%</div>
+            <div class="subtle">Stable conditions</div>
+          </div>
+          <div class="risk med" id="medRisk">
+            <div class="label" style="color: #e3a500">Medium</div>
+            <div class="percent" id="medPct">35%</div>
+            <div class="subtle">Watch metrics</div>
+          </div>
+          <div class="risk high" id="highRisk">
+            <div class="label" style="color: #e53958">High</div>
+            <div class="percent" id="highPct">20%</div>
+            <div class="subtle">Mitigate anomalies</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <h3>Top Risks</h3>
+          <table style="width:100%; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:8px; color:#a9c3e6; font-size:12px;">Category</th>
+                <th style="text-align:left; padding:8px; color:#a9c3e6; font-size:12px;">Severity</th>
+                <th style="text-align:left; padding:8px; color:#a9c3e6; font-size:12px;">Probability</th>
+                <th style="text-align:left; padding:8px; color:#a9c3e6; font-size:12px;">Impact</th>
+              </tr>
+            </thead>
+            <tbody id="riskTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      
+    </section>
+  </main>
+
+  <script>
+    // Helpers for forecasts (multi-metric)
+    function seededRandom(seed){ let x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+    function generatePast(n=20, base=60, trend=0.6, noise=1.8, clamp=[-Infinity, Infinity]){
+      const data = []; let v = base; let s = 1;
+      for(let i=0;i<n;i++){ s += 1; v += (seededRandom(s)*2-1)*noise + trend; v = Math.max(clamp[0], Math.min(clamp[1], v)); data.push(Math.round(v*10)/10); }
+      return data;
+    }
+    function forecastNext(last, n=10, trend=0.6, noise=1.2, clamp=[-Infinity, Infinity]){
+      const out = []; let val = last;
+      for(let i=0;i<n;i++){ val += trend + (Math.random()*2-1)*noise; val = Math.max(clamp[0], Math.min(clamp[1], val)); out.push(Math.round(val*10)/10); }
+      return out;
+    }
+
+    let chartState = {
+      cpu:  { pp: 20, pf: 10 },
+      rps:  { pp: 20, pf: 10 },
+      disk: { pp: 20, pf: 10 },
+      mem:  { pp: 20, pf: 10 },
+      proc: { pp: 20, pf: 10 },
+    };
+    function fmtTime(d){ return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+    function buildTimeLabels(pp, pf){
+      const now = new Date();
+      const labels = [];
+      for (let i=pp-1; i>=0; i--) { const d = new Date(now.getTime() - i*60000); labels.push(fmtTime(d)); }
+      for (let i=1; i<=pf; i++){ const d = new Date(now.getTime() + i*60000); labels.push(fmtTime(d)); }
+      return labels;
+    }
+
+    function makeLineChart(ctx, observed, forecast, color){
+      const grad = (()=>{ const g=ctx.createLinearGradient(0,0,0,220); g.addColorStop(0, color.replace('1)', '0.25)')); g.addColorStop(1,'rgba(0,0,0,0)'); return g; })();
+      return new Chart(ctx, {
+        type: 'line', data: { labels: buildTimeLabels(observed.length, forecast.length), datasets: [
+          { label: 'Observed', data: [...observed, ...Array(forecast.length).fill(null)], borderColor: color, backgroundColor: grad, fill: true, pointRadius: 0, tension: 0.35, borderWidth: 2 },
+          { label: 'Forecast', data: [...Array(observed.length).fill(null), ...forecast], borderColor: '#00b894', borderDash: [6,6], pointRadius: 0, tension: 0.35, borderWidth: 2 }
+        ] }, options: { scales: { x: { ticks: { color: '#a9c3e6' }, grid: { display:false } }, y: { ticks: { color: '#a9c3e6' }, grid: { color: 'rgba(255,255,255,0.06)' } } }, plugins: { legend: { labels: { color: '#cfe3ff' } } }, animation: { duration: 600 } }
+      });
+    }
+
+    // Build initial metric charts
+    const metricsCfg = {
+      cpu:  { base: 55, trend: 0.4, noise: 2.0, clamp:[0,100], color: 'rgba(47,123,253,1)' },
+      rps:  { base: 900, trend: 5, noise: 40, clamp:[200,1600], color: 'rgba(91,255,183,1)' },
+      disk: { base: 70, trend: 0.5, noise: 3.0, clamp:[0,100], color: 'rgba(255,209,102,1)' },
+      mem:  { base: 60, trend: 0.3, noise: 2.2, clamp:[0,100], color: 'rgba(173, 216, 230,1)' },
+      proc: { base: 45, trend: 0.6, noise: 2.5, clamp:[0,100], color: 'rgba(255,84,104,1)' }
+    };
+
+    const charts = {};
+    const series = {};
+    function buildAllCharts(){
+      ['cpu','rps','disk','mem','proc'].forEach(k => {
+        const cfg = metricsCfg[k];
+        const st = chartState[k];
+        const past = generatePast(st.pp, cfg.base, cfg.trend, cfg.noise, cfg.clamp);
+        const pred = forecastNext(past[past.length-1], st.pf, cfg.trend, cfg.noise*0.8, cfg.clamp);
+        series[k] = { past, pred };
+        const ctx = document.getElementById(`fc_${k}`).getContext('2d');
+        charts[k] = makeLineChart(ctx, past, pred, cfg.color);
+        charts[k].update();
+      });
+    }
+    buildAllCharts();
+
+    // Per-block range selectors
+    function rangeToState(val){
+      const m = parseInt(val,10);
+      if (m === 15) return { pp: 10, pf: 5 };
+      if (m === 60) return { pp: 40, pf: 20 };
+      return { pp: 20, pf: 10 }; // 30m default
+    }
+    function rebuildChart(key){
+      const cfg = metricsCfg[key];
+      const st = chartState[key];
+      const ctx = document.getElementById(`fc_${key}`).getContext('2d');
+      if (charts[key]) charts[key].destroy();
+      const past = generatePast(st.pp, cfg.base, cfg.trend, cfg.noise, cfg.clamp);
+      const pred = forecastNext(past[past.length-1], st.pf, cfg.trend, cfg.noise*0.8, cfg.clamp);
+      series[key] = { past, pred };
+      charts[key] = makeLineChart(ctx, past, pred, cfg.color);
+      charts[key].update();
+    }
+    [['cpu','range_cpu'],['rps','range_rps'],['disk','range_disk'],['mem','range_mem'],['proc','range_proc']].forEach(([key, selId])=>{
+      const sel = document.getElementById(selId);
+      if (sel) sel.addEventListener('change', (e)=>{ chartState[key] = rangeToState(e.target.value); rebuildChart(key); });
+    });
+
+    // Quick stats per metric
+    function avg(arr){ return Math.round(arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length)); }
+    function updateStats(){
+      Object.keys(series).forEach(k => {
+        const s = series[k];
+        const curr = s.past[s.past.length-1];
+        const prev = s.past[s.past.length-2] ?? curr;
+        const change = Math.round((curr - prev));
+        const host = document.getElementById(`stats_${k}`);
+        if (!host) return;
+        const chips = host.querySelectorAll('.stat-chip strong');
+        if (chips[0]) chips[0].textContent = ` ${curr}`;
+        if (chips[1]) chips[1].textContent = ` ${avg(s.past)}`;
+        if (chips[2]) chips[2].textContent = ` ${change >= 0 ? '+'+change : change}`;
+      });
+    }
+
+    // Uncertainty bar chart
+    const uCtx = document.getElementById('uncertaintyChart').getContext('2d');
+    function randomUnc(){ return Math.round(5 + Math.random()*20); }
+    const uncData = Array.from({length:10}, () => randomUnc());
+    const uncertaintyChart = new Chart(uCtx, {
+      type: 'bar',
+      data: { labels: Array.from({length:10}, (_,i)=>`t+${i+1}`), datasets: [{ label: 'Uncertainty ±%', data: uncData, backgroundColor: 'rgba(47,123,253,0.25)', borderColor: '#2f7bfd', borderWidth: 1.5, borderRadius: 6 }] },
+      options: { scales: { x: { grid: { display:false }, ticks: { color: '#627089' } }, y: { grid: { color:'#e9eff8' }, ticks: { color: '#627089' } } }, plugins: { legend: { labels: { color: '#1a2b49' } } }, animation: { duration: 600 } }
+    });
+
+    // Risk percentages update periodically
+    const lowEl = document.getElementById('lowPct');
+    const medEl = document.getElementById('medPct');
+    const highEl = document.getElementById('highPct');
+    function updateRisk(){
+      // Keep them summing near 100 with a light shuffle
+      let low = 45 + Math.round((Math.random()-0.5)*8);
+      let med = 35 + Math.round((Math.random()-0.5)*8);
+      let high = Math.max(5, 100 - (low + med));
+      lowEl.textContent = low + '%';
+      medEl.textContent = med + '%';
+      highEl.textContent = high + '%';
+    }
+
+    // Expanded risks table helpers
+    const categories = ['Infrastructure','Application','Network','Security','Capacity','Compliance','Third-Party','Data Quality'];
+    function riskRow(){
+      const cat = categories[Math.floor(Math.random()*categories.length)];
+      const sev = ['Low','Medium','High'][Math.floor(Math.random()*3)];
+      const prob = Math.round(20 + Math.random()*70);
+      const impact = Math.round(20 + Math.random()*70);
+      return {cat, sev, prob, impact};
+    }
+    function chipFor(sev){
+      const color = sev==='High'?'#ff5468':(sev==='Medium'?'#ffd166':'#5bffb7');
+      return `<span class="stat-chip" style="padding:4px 8px"><span class="dot" style="background:${color}"></span>${sev}</span>`;
+    }
+    function renderRiskTable(){
+      const tbody = document.getElementById('riskTable');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      for (let i=0;i<10;i++){
+        const r = riskRow();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="padding:8px; color:#d9e6f7">${r.cat}</td>
+          <td style="padding:8px">${chipFor(r.sev)}</td>
+          <td style="padding:8px; min-width:120px">
+            <div class="bar-track"><div class="bar-fill" style="width:${r.prob}%; background:${r.prob>70?'#ff5468':(r.prob>50?'#ffd166':'#5bffb7')}"></div></div>
+            <div class="small">${r.prob}%</div>
+          </td>
+          <td style="padding:8px; min-width:120px">
+            <div class="bar-track"><div class="bar-fill" style="width:${r.impact}%; background:${r.impact>70?'#ff5468':(r.impact>50?'#ffd166':'#5bffb7')}"></div></div>
+            <div class="small">${r.impact}%</div>
+          </td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Periodic refresh to simulate streaming forecasts for all metrics
+    function refreshForecast(){
+      Object.keys(charts).forEach(k => {
+        const cfg = metricsCfg[k];
+        const s = series[k];
+        const st = chartState[k];
+        const lastObserved = s.past[s.past.length-1];
+        const newObserved = Math.round((lastObserved + (Math.random()*2-1)*cfg.noise + cfg.trend)*10)/10;
+        const cl = cfg.clamp; const v = Math.max(cl[0], Math.min(cl[1], newObserved));
+        s.past.push(v); if (s.past.length > st.pp) s.past.shift();
+        s.pred = forecastNext(s.past[s.past.length-1], st.pf, cfg.trend, cfg.noise*0.8, cfg.clamp);
+        const d0 = charts[k].data.datasets[0].data;
+        const d1 = charts[k].data.datasets[1].data;
+        for (let i=0;i<st.pp+st.pf;i++) { d0[i] = (i < st.pp) ? s.past[i] : null; d1[i] = (i >= st.pp) ? s.pred[i-st.pp] : null; }
+        charts[k].data.labels = buildTimeLabels(st.pp, st.pf);
+        charts[k].update('active');
+      });
+
+      // risk trend + overall progress
+      if (!window._riskTrend) {
+        const rt = document.getElementById('riskTrend').getContext('2d');
+        window._riskData = Array.from({length:12}, ()=> Math.round(20 + Math.random()*70));
+        window._riskTrend = new Chart(rt, { type:'line', data:{ labels: Array.from({length:12}, (_,i)=> ''), datasets:[{ label:'Risk Score', data: window._riskData, borderColor:'#ff5468', backgroundColor:'rgba(255,84,104,0.15)', fill:true, pointRadius:0, tension:0.35, borderWidth:2 }]}, options:{ plugins:{ legend:{ labels:{ color:'#cfe3ff' } } }, scales:{ x:{ grid:{ display:false } , ticks:{ display:false } }, y:{ grid:{ color:'rgba(255,255,255,0.06)' }, ticks:{ color:'#a9c3e6' } } } } });
+      }
+      window._riskData.push(Math.round(20 + Math.random()*70));
+      if (window._riskData.length > 12) window._riskData.shift();
+      window._riskTrend.update('active');
+
+      // compute overall from low/med/high cards
+      const low = parseInt(document.getElementById('lowPct').textContent) || 45;
+      const med = parseInt(document.getElementById('medPct').textContent) || 35;
+      const high = parseInt(document.getElementById('highPct').textContent) || 20;
+      const overall = Math.min(100, Math.max(0, Math.round(high*0.7 + med*0.3)));
+      const fill = document.getElementById('riskFill');
+      if (fill) fill.style.width = overall + '%';
+      const rkH = document.getElementById('rkHigh'); if (rkH) rkH.textContent = high + '%';
+      const rkM = document.getElementById('rkMed'); if (rkM) rkM.textContent = med + '%';
+      const rkL = document.getElementById('rkLow'); if (rkL) rkL.textContent = low + '%';
+
+      // refresh top risks table
+      renderRiskTable();
+
+      // update stats
+      updateStats();
+
+      // update uncertainty bars
+      uncertaintyChart.data.datasets[0].data = Array.from({length:10}, () => randomUnc());
+      uncertaintyChart.update('active');
+
+      // risk
+      updateRisk();
+    }
+
+    setInterval(refreshForecast, 5000);
+    updateRisk();
+
+    // Normal Forecasting: risk pie + table
+    // Safeguard if module not visible yet
+    const pieCanvas = document.getElementById('riskPie');
+    let riskPie = null;
+    if (pieCanvas) {
+      const pieCtx = pieCanvas.getContext('2d');
+      const pieData = {
+        labels: ['High','Medium','Low'],
+        datasets: [{ data: [20,35,45], backgroundColor: ['#ff4d6d','#f4c542','#00b894'], borderColor: '#fff', borderWidth: 1 }]
+      };
+      riskPie = new Chart(pieCtx, { type: 'doughnut', data: pieData, options: { plugins: { legend: { position: 'bottom' } } } });
+    }
+    const riskTable = document.getElementById('riskTable');
+    const legacyCategories = ['Infrastructure','Application','Network','Security','Capacity'];
+    function randomRiskRowLegacy(){
+      const cat = legacyCategories[Math.floor(Math.random()*legacyCategories.length)];
+      const prob = ['Low','Medium','High'][Math.floor(Math.random()*3)];
+      const impact = ['Low','Medium','High'][Math.floor(Math.random()*3)];
+      return {cat, prob, impact};
+    }
+    function renderRiskTableLegacy(){
+      if (!riskTable) return;
+      riskTable.innerHTML = '';
+      for (let i=0;i<6;i++){
+        const r = randomRiskRowLegacy();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="padding:8px">${r.cat}</td><td style="padding:8px">${r.prob}</td><td style="padding:8px">${r.impact}</td>`;
+        riskTable.appendChild(tr);
+      }
+    }
+    function refreshPie(){
+      if (riskPie){
+        riskPie.data.datasets[0].data = [
+          Math.max(5, Math.round(15 + Math.random()*20)),
+          Math.max(10, Math.round(30 + Math.random()*15)),
+          Math.max(20, Math.round(40 + Math.random()*15))
+        ];
+        riskPie.update('active');
+      }
+      renderRiskTableLegacy();
+    }
+    renderRiskTableLegacy();
+    setInterval(refreshPie, 6000);
+
+    // Sidebar and global date range filters were removed. Per-card filters are used.
+  </script>
+  <!-- AI Chat Widget -->
+  <script>
+  (function(){
+    if (window.__aiChatInjected) return; window.__aiChatInjected=true;
+    const style = document.createElement('style');
+    style.textContent = `
+      .ai-chat-btn{position:fixed;right:16px;bottom:16px;width:56px;height:56px;border-radius:50%;background:#2f7bfd;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 12px 28px rgba(47,123,253,.35);z-index:99999;border:none}
+      .ai-chat-btn:hover{transform:translateY(-1px)}
+      .ai-chat-window{position:fixed;right:16px;bottom:84px;width:320px;max-width:92vw;height:420px;max-height:70vh;background:linear-gradient(180deg,#11161e,#0e1520);border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.45);overflow:hidden;z-index:99998;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s,transform .25s}
+      .ai-chat-window.open{opacity:1;transform:translateY(0);pointer-events:auto}
+      .ai-chat-header{padding:10px 12px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.08);font-weight:700;font-size:14px;color:#d8e8ff;display:flex;align-items:center;justify-content:space-between}
+      .ai-chat-history{height:calc(100% - 96px);padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+      .ai-msg{align-self:flex-start;background:rgba(47,123,253,.14);border:1px solid rgba(47,123,253,.35);color:#cfe3ff}
+      .user-msg{align-self:flex-end;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e6f0ff}
+      .bubble{padding:8px 10px;border-radius:10px;max-width:85%;font-size:13px;line-height:1.35}
+      .ai-chat-input{display:flex;gap:6px;padding:8px;border-top:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+      .ai-chat-input input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#e6f0ff}
+      .ai-chat-input button{padding:10px 12px;border-radius:10px;border:none;background:#2f7bfd;color:#fff;cursor:pointer}
+      @media(max-width:480px){.ai-chat-window{right:4vw;width:92vw;height:60vh}}
+    `;
+    document.head.appendChild(style);
+    const btn = document.createElement('button'); btn.className='ai-chat-btn'; btn.textContent='💬'; btn.title='AI Agent Chat';
+    const win = document.createElement('div'); win.className='ai-chat-window'; win.innerHTML=`
+      <div class=\"ai-chat-header\">AI Agent Chat <button id=\"aiChatClose\" style=\"background:transparent;border:none;color:#a9c3e6;cursor:pointer\">✕</button></div>
+      <div class=\"ai-chat-history\" id=\"aiChatHistory\"></div>
+      <div class=\"ai-chat-input\"><input id=\"aiChatInput\" type=\"text\" placeholder=\"Type your message...\" /><button id=\"aiChatSend\">Send</button></div>`;
+    document.body.appendChild(btn); document.body.appendChild(win);
+    const hist = win.querySelector('#aiChatHistory'); const input = win.querySelector('#aiChatInput'); const send=win.querySelector('#aiChatSend'); const close=win.querySelector('#aiChatClose');
+    const KEY='ai_chat_history_v1'; const saved = JSON.parse(localStorage.getItem(KEY)||'[]');
+    function pushBubble(t,who){ const d=document.createElement('div'); d.className=who==='user'?'bubble user-msg':'bubble ai-msg'; d.textContent=t; hist.appendChild(d); hist.scrollTop=hist.scrollHeight; save(); }
+    function save(){ localStorage.setItem(KEY, JSON.stringify(Array.from(hist.children).map(n=>({t:n.textContent,a:n.classList.contains('user-msg')?'user':'ai'})))); }
+    function restore(){ saved.forEach(x=> pushBubble(x.t, x.a)); }
+    function respond(msg){ const m=msg.toLowerCase(); if(m.includes('disk')) return 'Server Disk Space: 120GB used / 500GB total (24% used)'; if(m.includes('cpu')) return 'Current CPU Usage: 35%'; if(m.includes('memory')||m.includes('mem')) return 'Memory Usage: 6GB used / 16GB total (37% used)'; return 'AI Agent: I didn’t understand. Try asking about disk, CPU, or memory.'; }
+    function sendMsg(){ const v=input.value.trim(); if(!v) return; input.value=''; pushBubble(v,'user'); setTimeout(()=> pushBubble(respond(v),'ai'),200); }
+    btn.addEventListener('click', ()=> win.classList.toggle('open'));
+    close.addEventListener('click', ()=> win.classList.remove('open'));
+    send.addEventListener('click', sendMsg);
+    input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendMsg(); });
+    restore();
+  })();
+  </script>
+</body>
+</html>
+</html>

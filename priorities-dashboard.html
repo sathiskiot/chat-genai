@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SRE AI LensView – Priorities Dashboard</title>
+  <link rel="stylesheet" href="nav.css" />
+  <style>
+    :root{
+      --bg:#0c0f14; --panel:#11161e; --panel-2:#0e131a; --text:#e6f0ff; --muted:#9bb3d1;
+      --accent:#2f7bfd; --accent-2:#5bffb7; --danger:#ff5468; --warn:#ffd166; --ok:#33d17a;
+      --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial; background:radial-gradient(1100px 800px at 90% -20%, rgba(47,123,253,.08), transparent), radial-gradient(900px 700px at -10% 110%, rgba(91,255,183,.06), transparent), var(--bg); color:var(--text)}
+    a{color:inherit}
+
+    /* Page header */
+    .page-header{position:sticky; top:0; z-index:10; background:linear-gradient(180deg, rgba(12,15,20,.96), rgba(12,15,20,.86)); border-bottom:1px solid rgba(255,255,255,.08); backdrop-filter: blur(8px)}
+    .page-wrap{max-width:1200px;margin:0 auto;padding:14px 18px 10px}
+    .title{margin:6px 0 10px;text-align:center;font-weight:900;letter-spacing:.2px;font-size:22px}
+    @media(min-width:720px){ .title{font-size:24px} }
+
+    /* Tabs */
+    .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+    .tab{appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--muted);padding:8px 12px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s,transform .2s}
+    .tab:hover{background:rgba(47,123,253,.12);color:#e3eeff;transform:translateY(-1px)}
+    .tab.active{background:rgba(47,123,253,.2);border-color:rgba(47,123,253,.35);color:#e6f0ff}
+
+    /* Sections */
+    .content{max-width:1200px;margin:18px auto 60px;padding:0 18px}
+    .view{opacity:0;transform:translateY(6px) scale(.995);transition:opacity .22s ease, transform .22s ease}
+    .view.active{opacity:1;transform:none}
+    .view[hidden]{display:none}
+
+    /* Search */
+    .searchbar{display:flex;gap:8px;align-items:center;margin:6px 0 12px}
+    .searchbar input[type="search"]{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:12px;padding:10px 12px}
+    .searchbar .clear{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--muted);padding:10px 12px;border-radius:12px;cursor:pointer}
+    .searchbar .clear:hover{background:rgba(47,123,253,.12);color:#dfe8ff}
+
+    /* Cards grid */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:12px}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:14px;box-shadow:var(--shadow);padding:12px;transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease}
+    .card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(47,123,253,.15);border-color:rgba(47,123,253,.25)}
+    .card .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .server{font-weight:700;color:#d8e8ff}
+    .desc{color:var(--muted);font-size:13px;margin:6px 0 10px}
+    .sev{font-size:12px;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14)}
+    .sev.high{background:rgba(255,84,104,.14);border-color:rgba(255,84,104,.35);color:#ffd2d8}
+    .sev.med{background:rgba(255,209,102,.14);border-color:rgba(255,209,102,.35);color:#ffefc6}
+    .sev.low{background:rgba(51,209,122,.14);border-color:rgba(51,209,122,.35);color:#c7ffe4}
+    .actions{display:flex;justify-content:flex-end}
+    .btn{background:#1a2230;border:1px solid rgba(255,255,255,.12);color:#e6f0ff;border-radius:10px;padding:8px 10px;cursor:pointer}
+    .btn:hover{background:#213049}
+
+    /* History table */
+    .table-wrap{overflow-x:auto;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.03)}
+    table{width:100%;border-collapse:collapse;min-width:720px}
+    thead th{text-align:left;font-size:12px;letter-spacing:.3px;color:#cfe3ff;padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.08)}
+    tbody td{padding:12px 10px;border-bottom:1px dashed rgba(255,255,255,.06);color:#d9e6f7}
+    tbody tr:nth-child(even){background:rgba(255,255,255,.03)}
+    tbody tr:hover{background:rgba(47,123,253,.08)}
+
+    .subtle{color:var(--muted);font-size:12px;margin:2px 0 12px}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-wrap">
+      <a class="brand" href="index.html">SRE AI LensView</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="nav-menu" aria-label="Primary">
+        <a href="infra-dashboard.html">Dashboard</a>
+        <a href="logs-analzer.html">Logs Analyzer</a>
+        <a href="anomaly.html" class="active">Anomaly Detection</a>
+        <a href="forecasting.html">Forecasting</a>
+        <a href="priorities-dashboard.html">Remediate Issue</a>
+      </nav>
+    </div>
+  </header>
+  <header class="page-header">
+    <div class="page-wrap">
+      <nav class="tabs" role="tablist" aria-label="Priorities Tabs">
+        <button class="tab active" role="tab" aria-selected="true" aria-controls="current" id="tab-current">Current Priorities</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="history" id="tab-history">Past History</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="content">
+    <section id="current" class="view active" role="tabpanel" aria-labelledby="tab-current">
+      <div class="searchbar">
+        <input id="search" type="search" placeholder="Filter by server name (e.g., web-app)" aria-label="Filter issues by server name" />
+        <button class="clear" id="clearSearch" aria-label="Clear search">Clear</button>
+      </div>
+      <div id="cards" class="grid" aria-live="polite"></div>
+      <p class="subtle" id="count"></p>
+    </section>
+
+    <section id="history" class="view" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Server Name</th>
+              <th>Issue Type</th>
+              <th>Date &amp; Time</th>
+              <th>Incident Number</th>
+              <th>Action Taken By</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <!-- rows injected by JS -->
+          </tbody>
+        </table>
+      </div>
+   </section>
+  </main>
+
+  <script>
+    // Sample issues (10)
+    const ISSUES = [
+      { server:'web-app-01', severity:'High', desc:'CPU high due to process node.exe (service xyz)' },
+      { server:'db-server-03', severity:'High', desc:'Disk space > 95% – top 10 files > 500MB' },
+      { server:'api-gateway-02', severity:'Medium', desc:'Elevated 5xx rate during traffic spike' },
+      { server:'web-app-02', severity:'Low', desc:'NTP drift detected, resync recommended' },
+      { server:'cache-redis-01', severity:'Medium', desc:'Memory fragmentation increasing; restart window advised' },
+      { server:'worker-queue-05', severity:'Low', desc:'High queue depth observed overnight; recovered' },
+      { server:'db-server-02', severity:'High', desc:'Replication lag > 120s on read replica' },
+      { server:'ml-infer-01', severity:'Medium', desc:'GPU utilization > 90% sustained 30m' },
+      { server:'auth-svc-01', severity:'Low', desc:'TLS certificate expiring in 12 days' },
+      { server:'batch-runner-07', severity:'Medium', desc:'I/O wait spikes during backup window' }
+    ];
+
+    // Sample history (>=6 rows)
+    const HISTORY = [
+      ['web-app-01', 'Restart service after CPU spike', '2025-08-30 14:22', 'INC102345', 'Admin'],
+      ['db-server-03', 'Cleared large log files', '2025-08-29 09:05', 'INC102112', 'Admin'],
+      ['api-gateway-02', 'Scaled out instances x2', '2025-08-28 21:10', 'INC101998', 'SRE-Bot'],
+      ['web-app-02', 'Applied NTP sync', '2025-08-27 10:44', 'INC101790', 'OpsUser'],
+      ['cache-redis-01', 'Scheduled maintenance restart', '2025-08-26 02:15', 'INC101645', 'Admin'],
+      ['db-server-02', 'Optimized replication settings', '2025-08-25 18:36', 'INC101501', 'DBA'],
+      ['auth-svc-01', 'Rotated TLS certificate', '2025-08-24 12:03', 'INC101355', 'Security'],
+    ];
+
+    // Helpers
+    const qs = (s, el=document) => el.querySelector(s);
+    const qsa = (s, el=document) => Array.from(el.querySelectorAll(s));
+    function sevClass(sev){ return sev === 'High' ? 'high' : sev === 'Medium' ? 'med' : 'low'; }
+
+    // Render cards
+    function renderCards(list){
+      const grid = qs('#cards');
+      grid.innerHTML = '';
+      list.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.server = item.server.toLowerCase();
+        card.dataset.desc = item.desc;
+        card.innerHTML = `
+          <div class="row">
+            <div class="server">${item.server}</div>
+            <span class="sev ${sevClass(item.severity)}" title="Severity: ${item.severity}">${item.severity}</span>
+          </div>
+          <div class="desc">${item.desc}</div>
+          <div class="actions"><button class="btn take-action">Take Action</button></div>
+        `;
+        card.querySelector('.take-action').addEventListener('click', () => {
+          alert(`✅ Action taken for ${item.desc}`);
+        });
+        grid.appendChild(card);
+      });
+      qs('#count').textContent = `${list.length} item(s)`;
+    }
+
+    // Render history
+    function renderHistory(){
+      const tbody = qs('#historyBody');
+      tbody.innerHTML = '';
+      HISTORY.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Tabs with simple fade transitions
+    function activateTab(which){
+      const currentBtn = qs('#tab-current');
+      const historyBtn = qs('#tab-history');
+      const vCurrent = qs('#current');
+      const vHistory = qs('#history');
+      if (which === 'current'){
+        currentBtn.classList.add('active'); currentBtn.setAttribute('aria-selected','true');
+        historyBtn.classList.remove('active'); historyBtn.setAttribute('aria-selected','false');
+        // fade out history then hide
+        vHistory.classList.remove('active');
+        setTimeout(()=>{ vHistory.hidden = true; }, 200);
+        vCurrent.hidden = false;
+        requestAnimationFrame(()=> vCurrent.classList.add('active'));
+      } else {
+        historyBtn.classList.add('active'); historyBtn.setAttribute('aria-selected','true');
+        currentBtn.classList.remove('active'); currentBtn.setAttribute('aria-selected','false');
+        vCurrent.classList.remove('active');
+        setTimeout(()=>{ vCurrent.hidden = true; }, 200);
+        vHistory.hidden = false;
+        requestAnimationFrame(()=> vHistory.classList.add('active'));
+      }
+    }
+
+    // Search filter by server name
+    function applyFilter(){
+      const q = qs('#search').value.trim().toLowerCase();
+      const list = ISSUES.filter(it => it.server.toLowerCase().includes(q));
+      renderCards(list);
+    }
+
+    // Init
+    renderCards(ISSUES);
+    renderHistory();
+
+    // Wire events
+    qs('#tab-current').addEventListener('click', () => activateTab('current'));
+    qs('#tab-history').addEventListener('click', () => activateTab('history'));
+    qs('#search').addEventListener('input', applyFilter);
+    qs('#clearSearch').addEventListener('click', () => { qs('#search').value=''; applyFilter(); });
+  </script>
+  <script defer src="nav.js"></script>
+</body>
+</html>

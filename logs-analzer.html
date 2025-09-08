@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server Log Monitoring</title>
+  <link rel="stylesheet" href="nav.css" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b1016;
+      --panel: #0f1620;
+      --panel-2: #0d131c;
+      --text: #e6f0ff;
+      --muted: #9bb3d1;
+      --accent: #00d1ff;
+      --green: #33d17a;
+      --yellow: #ffd166;
+      --red: #ff5468;
+      --shadow: 0 10px 30px rgba(0, 208, 255, 0.12);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box }
+    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; color: var(--text); background: radial-gradient(900px 700px at 100% -10%, rgba(0,209,255,.1), transparent), radial-gradient(900px 700px at -10% 110%, rgba(91,255,183,.06), transparent), var(--bg); }
+
+    /* Top bar */
+    .topbar { position: sticky; top: 0; z-index: 20; background: linear-gradient(180deg, rgba(11,16,22,.95), rgba(11,16,22,.8)); border-bottom: 1px solid rgba(0,209,255,.12); backdrop-filter: blur(8px); display:flex; align-items:center; gap:10px; padding: 12px 16px; }
+    .brand { font-weight: 800; letter-spacing: .3px; margin-right: 10px; display:flex; align-items:center; gap:8px; }
+    .dot { width:10px; height:10px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #bff, var(--accent)); box-shadow: 0 0 12px var(--accent); }
+    .search { flex:1; display:flex; gap:8px; }
+    .search input { flex:1; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 10px 12px; color: var(--text); }
+    .filters { display:flex; gap:8px; }
+    .filters select { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: 10px 12px; }
+
+    /* Layout */
+    .wrap { display:grid; grid-template-columns: 220px 1fr; gap: 14px; padding: 14px 16px; max-width: 1400px; margin: 0 auto; }
+    @media (max-width: 980px) { .wrap { grid-template-columns: 1fr; } .sidebar { order:2 } }
+
+    /* Sidebar */
+    .sidebar { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.06); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px; height: fit-content; }
+    .sidebar h3 { margin: 4px 4px 10px; font-size: 14px; color: #cfe3ff; }
+    .server { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius: 10px; color: var(--muted); border:1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.03); margin-bottom: 6px; cursor: pointer; }
+    .server:hover { background: rgba(0,209,255,.08) }
+    .server.active { background: rgba(0,209,255,.12); color: var(--text); border-color: rgba(0,209,255,.25); }
+
+    /* Cards */
+    .card { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.06); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 14px; }
+    .row2 { display:grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
+    @media (max-width: 980px) { .row2 { grid-template-columns: 1fr } }
+    h2 { margin: 4px 4px 10px; font-size: 18px; color: #d8e8ff; }
+    .subtle { color: var(--muted); font-size: 12px; margin: 0 4px 12px; }
+
+    /* Log viewer */
+    .console { background: #0a0f15; border:1px solid rgba(255,255,255,.06); border-radius: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.45; padding: 10px; height: 360px; overflow:auto; }
+    .log { padding: 2px 6px; border-radius: 6px; }
+    .ts { color:#a9c3e6; margin-right: 6px; }
+    .lvl { font-weight: 700; margin-right: 6px; }
+    .INFO { color: var(--green) }
+    .WARN { color: var(--yellow) }
+    .ERROR { color: var(--red) }
+    mark { background: rgba(0,209,255,.25); color: #fff; padding:0 2px; border-radius: 3px; }
+
+    /* AI insights */
+    .insights { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 720px) { .insights { grid-template-columns: 1fr; } }
+    .insight { border:1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.03); border-radius: 12px; padding: 10px; display:flex; gap:8px; align-items:flex-start; }
+    .badge { width:10px; height:10px; border-radius:50%; margin-top: 6px; }
+    .i-high { background: var(--red) }
+    .i-med { background: var(--yellow) }
+    .i-low { background: var(--green) }
+
+    /* Charts */
+    .charts { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    @media (max-width: 980px) { .charts { grid-template-columns: 1fr } }
+    .kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:10px; }
+    @media (max-width: 980px) { .kpis { grid-template-columns: repeat(2, 1fr) } }
+    .kpi { padding:10px; border-radius:12px; background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); box-shadow: var(--shadow); }
+    .kpi .label { color:#a9c3e6; font-size:12px; }
+    .kpi .value { font-size:22px; font-weight:800; color:#d8e8ff; }
+    .toolbar { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:8px; }
+    .toolbar select { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: var(--text); border-radius: 10px; padding: 8px 10px; }
+  </style>
+  <script defer src="nav.js"></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-wrap">
+    <a class="brand" href="index.html">SRE AI LensView</a>
+    <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+    <nav class="nav-menu" aria-label="Primary">
+      <a href="infra-dashboard.html">Dashboard</a>
+      <a href="logs-analzer.html">Logs Analyzer</a>
+      <a href="anomaly.html" class="active">Anomaly Detection</a>
+      <a href="forecasting.html">Forecasting</a>
+      <a href="priorities-dashboard.html">Remediate Issue</a>
+    </nav>
+  </div>
+</header>
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span> Server Log Monitoring</div>
+  </div>
+
+  <main class="wrap">
+    <aside class="sidebar" id="sidebar">
+      <h3>Servers</h3>
+      <div class="server active" data-srv="All">All Servers</div>
+      <div class="server" data-srv="Webserver-1">Webserver-1</div>
+      <div class="server" data-srv="Webserver-2">Webserver-2</div>
+      <div class="server" data-srv="Appserver-1">Appserver-1</div>
+      <div class="server" data-srv="Appserver-2">Appserver-2</div>
+      <div class="server" data-srv="DB-Primary">DB-Primary</div>
+    </aside>
+
+    <section class="grid">
+      <!-- AI Agent Log Insights (Dashboards section removed) -->
+      <section class="card">
+        <h2>AI Agent Log Insights</h2>
+        <div class="insights" id="insights"></div>
+      </section>
+
+      <!-- 2) Query the logs -->
+      <section class="card">
+        <h2>Query Logs</h2>
+        <div class="toolbar" style="justify-content:space-between">
+          <div class="search" style="flex:1; display:flex; gap:8px">
+            <input type="text" id="q" placeholder="Search keywords (e.g. 500, timeout, user=42)" />
+          </div>
+          <div class="filters" style="display:flex; gap:8px">
+            <select id="timeSel">
+              <option value="5">Last 5 min</option>
+              <option value="60" selected>Last 1 hr</option>
+              <option value="1440">Last 24 hrs</option>
+            </select>
+            <select id="sevSel">
+              <option value="ALL" selected>All severities</option>
+              <option value="INFO">INFO</option>
+              <option value="WARN">WARN</option>
+              <option value="ERROR">ERROR</option>
+            </select>
+            <select id="srvSel">
+              <option>All servers</option>
+              <option>Webserver-1</option>
+              <option>Webserver-2</option>
+              <option>Appserver-1</option>
+              <option>Appserver-2</option>
+              <option>DB-Primary</option>
+            </select>
+          </div>
+        </div>
+        <p class="subtle">Combine filters and search to find specific events. Results are highlighted below in real-time logs.</p>
+      </section>
+
+      <!-- 3) Real-time logs in separate section -->
+      <section class="card">
+        <h2>Real-Time Logs</h2>
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:6px">
+          <div class="subtle">Auto-refresh ~3–5s. Use query controls above.</div>
+          <div style="display:flex; gap:8px; align-items:center">
+            <label class="subtle" style="display:flex; align-items:center; gap:6px"><input type="checkbox" id="filterChk" checked /> Filter matches</label>
+            <button id="pauseBtn" class="kpi" style="padding:8px 10px; cursor:pointer">Pause Scroll</button>
+            <button id="clearBtn" class="kpi" style="padding:8px 10px; cursor:pointer">Clear</button>
+            <button id="dlBtn" class="kpi" style="padding:8px 10px; cursor:pointer">Download</button>
+          </div>
+        </div>
+        <div class="console" id="console"></div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    // Sample data generation
+    const servers = ['Webserver-1','Webserver-2','Appserver-1','Appserver-2','DB-Primary'];
+    const levels = ['INFO','WARN','ERROR'];
+    function rand(a,b){ return Math.floor(a + Math.random()*(b-a+1)); }
+    function pad(n){ return n.toString().padStart(2,'0'); }
+    function nowTs(){ const d=new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+    const messages = {
+      INFO: [
+        'Request handled successfully',
+        'User login OK user={user}',
+        'Cache hit for key={key}',
+        'Job completed duration={ms}ms',
+        'Healthcheck passed',
+      ],
+      WARN: [
+        'Slow query detected duration={ms}ms',
+        'Retrying request to upstream',
+        'High memory usage: {pct}%',
+        'Disk nearing threshold on {srv}',
+      ],
+      ERROR: [
+        'HTTP 500 Internal Server Error path={path}',
+        'Database timeout after {ms}ms',
+        'Unhandled exception in module={mod}',
+        'Connection refused to {srv}',
+      ]
+    };
+
+    function formatMsg(level, srv){
+      const tpl = pick(messages[level]);
+      return tpl
+        .replace('{user}', rand(1000,1042))
+        .replace('{key}', 'k'+rand(10,99))
+        .replace('{ms}', rand(120, 2200))
+        .replace('{pct}', rand(60, 98))
+        .replace('{srv}', srv)
+        .replace('{path}', ['/api/orders','/api/login','/api/products'][rand(0,2)])
+        .replace('{mod}', ['auth','orders','billing'][rand(0,2)]);
+    }
+
+    // Log buffer
+    const buffer = [];
+    function pushLog(){
+      const srv = pick(servers);
+      const lvl = Math.random()<0.75 ? pick(['INFO','WARN']) : 'ERROR';
+      buffer.push({ ts: nowTs(), level: lvl, server: srv, msg: formatMsg(lvl, srv) });
+      if (buffer.length > 500) buffer.shift();
+      renderLogs();
+      updateCharts();
+      updateInsights();
+    }
+
+    // Filters
+    const q = document.getElementById('q');
+    const timeSel = document.getElementById('timeSel');
+    const sevSel = document.getElementById('sevSel');
+    const srvSel = document.getElementById('srvSel');
+    const consoleEl = document.getElementById('console');
+
+    q.addEventListener('input', renderLogs);
+    timeSel.addEventListener('change', renderLogs);
+    sevSel.addEventListener('change', renderLogs);
+    srvSel.addEventListener('change', renderLogs);
+
+    // Sidebar server selection
+    document.querySelectorAll('.server').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.server').forEach(x=>x.classList.remove('active'));
+        el.classList.add('active');
+        srvSel.value = el.dataset.srv === 'All' ? 'All servers' : el.dataset.srv;
+        renderLogs();
+      })
+    });
+
+    // Render logs with highlighting
+    let autoScroll = true;
+    function renderLogs(){
+      const text = q.value.trim();
+      const sev = sevSel.value;
+      const srv = srvSel.value;
+      // simulate time filter by just limiting count
+      const tail = timeSel.value === '5' ? 80 : (timeSel.value==='60'? 200 : 400);
+      const logsAll = buffer.slice(-tail);
+      const filterMatches = document.getElementById('filterChk').checked;
+      const logs = logsAll.filter(row => {
+        if (sev !== 'ALL' && row.level !== sev) return false;
+        if (srv !== 'All servers' && row.server !== srv) return false;
+        if (filterMatches && text && !(`${row.ts} ${row.level} ${row.server} ${row.msg}`.toLowerCase().includes(text.toLowerCase()))) return false;
+        return true;
+      });
+      consoleEl.innerHTML = logs.map((row,idx) => {
+        const ln = (idx+1).toString().padStart(3,' ');
+        const base = `${ln} [${row.ts}] <span class="lvl ${row.level}">${row.level}</span> <span class="ts">${row.server}</span> ${row.msg}`;
+        return `<div class="log">${text? highlight(base, text): base}</div>`;
+      }).join('');
+      if (autoScroll) consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+    function highlight(s, k){ try { return s.replace(new RegExp(`(${escapeReg(k)})`,'ig'), '<mark>$1</mark>'); } catch { return s; } }
+    function escapeReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // Charts (guard creation because dashboards were removed)
+    const errTrendCanvas = document.getElementById('errTrend');
+    const sevPieCanvas = document.getElementById('sevPie');
+    const srvBarCanvas = document.getElementById('srvBar');
+    let errTrend = null, sevPie = null, srvBar = null;
+    if (errTrendCanvas) {
+      errTrend = new Chart(errTrendCanvas.getContext('2d'), {
+        type:'line', data:{ labels:[], datasets:[{ label:'Errors/min', data:[], borderColor: varColor('--red', .9), backgroundColor: 'rgba(255,84,104,.15)', fill: true, pointRadius:0, tension:.35, borderWidth:2 }] },
+        options:{ plugins:{ legend:{ labels:{ color:'#cfe3ff' } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#a9c3e6' } }, y:{ grid:{ color:'rgba(255,255,255,.06)' }, ticks:{ color:'#a9c3e6' } } } }
+      });
+    }
+    if (sevPieCanvas) {
+      sevPie = new Chart(sevPieCanvas.getContext('2d'), {
+        type:'doughnut', data:{ labels:['ERROR','WARN','INFO'], datasets:[{ data:[0,0,0], backgroundColor:['#ff5468','#ffd166','#33d17a'], borderColor:'#0b1016', borderWidth:2 }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#cfe3ff' } } } }
+      });
+    }
+    if (srvBarCanvas) {
+      srvBar = new Chart(srvBarCanvas.getContext('2d'), {
+        type:'bar', data:{ labels:[...servers], datasets:[{ label:'Events', data:[0,0,0,0,0], backgroundColor:'rgba(0,209,255,.25)', borderColor:'#00d1ff', borderWidth:1.5, borderRadius:8 }] }, options:{ plugins:{ legend:{ labels:{ color:'#cfe3ff' } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#a9c3e6' } }, y:{ grid:{ color:'rgba(255,255,255,.06)' }, ticks:{ color:'#a9c3e6' } } } }
+      });
+    }
+    function varColor(name, a=1){
+      const map = { '--red':'255,84,104', '--yellow':'255,209,102', '--green':'51,209,122' };
+      return `rgba(${map[name]||'0,209,255'},${a})`;
+    }
+    const chartRangeSel = document.getElementById('chartRange');
+    function windowTail(mins){ return Math.max(30, Math.min(1440, mins)) * 12; }
+    function updateKPIs(lastArr, mins){
+      const total = lastArr.length;
+      const e = lastArr.filter(r=>r.level==='ERROR').length;
+      const active = new Set(lastArr.map(r=>r.server)).size;
+      const perMin = Math.round(total / Math.max(1, mins));
+      const elTotal = document.getElementById('kTotal'); if (elTotal) elTotal.textContent = total.toString();
+      const elErr = document.getElementById('kErrorRate'); if (elErr) elErr.textContent = (total? Math.round(e*100/total):0) + '%';
+      const elAct = document.getElementById('kActive'); if (elAct) elAct.textContent = active.toString();
+      const elThr = document.getElementById('kThru'); if (elThr) elThr.textContent = perMin + '/min';
+    }
+    function updateCharts(){
+      // Errors/min (use last N logs)
+      const t = new Date();
+      const label = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
+      const mins = parseInt((chartRangeSel && chartRangeSel.value)||'60',10);
+      const slice = buffer.slice(-windowTail(mins));
+      const errCount = slice.filter(r=>r.level==='ERROR').length;
+      if (errTrend){
+        pushRolling(errTrend.data.labels, label, 14);
+        pushRolling(errTrend.data.datasets[0].data, errCount, 14);
+        errTrend.update('active');
+      }
+      // Severity pie
+      const last = slice;
+      const e = last.filter(r=>r.level==='ERROR').length;
+      const w = last.filter(r=>r.level==='WARN').length;
+      const i = last.filter(r=>r.level==='INFO').length;
+      if (sevPie){ sevPie.data.datasets[0].data = [e,w,i]; sevPie.update('active'); }
+      // Server bar
+      const counts = servers.map(s=> last.filter(r=>r.server===s).length);
+      if (srvBar){ srvBar.data.datasets[0].data = counts; srvBar.update('active'); }
+      // KPIs
+      updateKPIs(last, mins);
+    }
+    function pushRolling(arr, val, max){ arr.push(val); if (arr.length>max) arr.shift(); }
+
+    // Insights (dummy logic)
+    function updateInsights(){
+      const last = buffer.slice(-200);
+      const bySrv = Object.fromEntries(servers.map(s=>[s, last.filter(r=>r.server===s)]));
+      const highSrv = servers.reduce((a,b)=> (bySrv[a].filter(x=>x.level==='ERROR').length > bySrv[b].filter(x=>x.level==='ERROR').length ? a: b));
+      const medSrv = servers[rand(0,servers.length-1)];
+      const lowSrv = servers[rand(0,servers.length-1)];
+      const stamp = new Date().toLocaleTimeString();
+      const items = [
+        { sev:'high', text:`Elevated 500 errors on ${highSrv}.`, actions:['Inspect nginx/error logs','Check recent deploys'] },
+        { sev:'med', text:`Possible DB timeouts on ${medSrv}.`, actions:['Review DB connections','Check slow queries'] },
+        { sev:'low', text:`Response times stable on ${lowSrv}.`, actions:['Continue monitoring'] },
+      ];
+      const host = document.getElementById('insights');
+      host.innerHTML = items.map(it => `
+        <div class="insight">
+          <span class="badge i-${it.sev}"></span>
+          <div>
+            <div><strong>${it.sev.toUpperCase()}</strong> • <span class="subtle">${stamp}</span></div>
+            <div style="margin:4px 0 6px">${it.text}</div>
+            <div class="subtle">Suggested actions:</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px">
+              ${it.actions.map(a=>`<span class="kpi" style="padding:6px 8px; font-size:12px">${a}</span>`).join('')}
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    // Controls
+    document.getElementById('pauseBtn').addEventListener('click', () => { autoScroll = !autoScroll; document.getElementById('pauseBtn').textContent = autoScroll? 'Pause Scroll':'Resume Scroll'; });
+    document.getElementById('clearBtn').addEventListener('click', () => { buffer.length = 0; renderLogs(); updateCharts(); updateInsights(); });
+    document.getElementById('dlBtn').addEventListener('click', () => {
+      const text = q.value.trim();
+      const sev = sevSel.value;
+      const srv = srvSel.value;
+      const tail = timeSel.value === '5' ? 80 : (timeSel.value==='60'? 200 : 400);
+      const logs = buffer.slice(-tail).filter(row => {
+        if (sev !== 'ALL' && row.level !== sev) return false;
+        if (srv !== 'All servers' && row.server !== srv) return false;
+        if (text && !(`${row.ts} ${row.level} ${row.server} ${row.msg}`.toLowerCase().includes(text.toLowerCase()))) return false;
+        return true;
+      }).map(r => `[${r.ts}] ${r.level} ${r.server} ${r.msg}`).join('\n');
+      const blob = new Blob([logs||''], {type:'text/plain'}); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'logs.txt'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Seed logs and timers
+    for (let i=0;i<120;i++){ pushLog(); }
+    setInterval(pushLog, rand(3000, 5000));
+    if (chartRangeSel) chartRangeSel.addEventListener('change', updateCharts);
+  </script>
+  <script>
+  (function(){
+    function ensureChatOpen(){
+      var dock = document.querySelector('.chat-dock');
+      var toggle = document.querySelector('.chat-toggle');
+      if (dock) { dock.classList.add('open'); return; }
+      if (toggle) { toggle.click(); setTimeout(function(){ var d=document.querySelector('.chat-dock'); if(d) d.classList.add('open'); }, 80); }
+    }
+    function addAskButton(){
+      var filters = document.querySelector('.card:nth-of-type(2) .filters') || document.querySelector('.filters');
+      if (!filters) return;
+      var btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.id = 'openChat';
+      btn.title = 'Ask AI about these logs';
+      btn.textContent = 'Ask AI';
+      filters.appendChild(btn);
+      btn.addEventListener('click', ensureChatOpen);
+    }
+    if (document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', addAskButton); } else { addAskButton(); }
+  })();
+  </script>
+</body>
+</html>
