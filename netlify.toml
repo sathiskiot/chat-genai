@@ -9,12 +9,25 @@
   status = 200
 [[redirects]]
   from = "/infra"
-  to = "/infra_dashboard.html"
+  to = "/infra-dashboard.html"
   status = 200
 # Nice path for the log analyzer
 [[redirects]]
   from = "/logs"
-  to = "/log_analyzer.html"
+  to = "/log-analzer.html"
+  status = 200
+  # Nice path for the Forecast
+[[redirects]]
+  from = "/forecasting"
+  to = "/forecasting.html"
+  status = 200
+[[redirects]]
+  from = "/anomaly"
+  to = "/anomaly.html"
+  status = 200
+[[redirects]]
+  from = "/priorities"
+  to = "/priorities-dashboard.html"
   status = 200
 
 # Disable caching for frequently changing data files
