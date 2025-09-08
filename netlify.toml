@@ -1,39 +1,3 @@
 [build]
   publish = "."
   command = ""
-
-# Route the site root to the dashboard
-[[redirects]]
-  from = "/"
-  to = "/infra-dashboard.html"
-  status = 200
-# Nice path for the log analyzer
-[[redirects]]
-  from = "/logs"
-  to = "/log-analzer.html"
-  status = 200
-  # Nice path for the Forecast
-[[redirects]]
-  from = "/forecasting"
-  to = "/forecasting.html"
-  status = 200
-[[redirects]]
-  from = "/anomaly"
-  to = "/anomaly.html"
-  status = 200
-[[redirects]]
-  from = "/priorities"
-  to = "/priorities-dashboard.html"
-  status = 200
-
-# Disable caching for frequently changing data files
-[[headers]]
-  for = "/*.json"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/*.log"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
