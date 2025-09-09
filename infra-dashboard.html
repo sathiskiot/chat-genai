@@ -25,8 +25,9 @@
     .ok{background:var(--ok)} .warn{background:var(--warn)} .down{background:var(--down)}
 
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
-    .card{grid-column:span 12;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    @media(min-width:900px){.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-12{grid-column:span 12}}
+    .card{grid-column:span 12;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform .2s ease, box-shadow .2s ease}
+    .card:hover{transform:translateY(-1px);box-shadow:0 14px 36px rgba(0,0,0,.32)}
+    @media(min-width:900px){.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}}
 
     .kpi{display:flex;align-items:center;gap:12px}
     .kpi h3{margin:0;font-size:14px;color:var(--muted)}
@@ -66,8 +67,72 @@
     .modal-close:hover{background:#243063}
     .modal-body{flex:1}
     .modal-iframe{width:100%;height:100%;border:0}
+
+    /* Embedded RTM module (theme-aligned) */
+    .charts{display:grid;grid-template-columns:1fr;gap:14px}
+    .mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    @media(max-width:900px){.mini-grid{grid-template-columns:repeat(2,1fr)}}
+    .mini{background:#0f1636;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+    .mini .label{color:#9aa3b2;font-size:12px;margin:0 0 6px}
+    .mini .value{font-size:20px;font-weight:700;letter-spacing:.2px}
+    .mini .meta{color:#9aa3b2;font-size:12px;margin-top:4px}
+    .chart-box{position:relative;height:220px}
+    .chart-box.sm{height:160px}
+    .chart-box canvas{width:100%!important;height:100%!important;display:block}
+    .subcard{background:#0e1431;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;box-shadow:0 8px 22px rgba(0,0,0,.22);transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease}
+    .subcard:hover{transform:translateY(-2px);border-color:rgba(96,165,250,.28);box-shadow:0 14px 32px rgba(0,0,0,.28)}
+    .subcard h3{margin:2px 2px 8px;font-size:14px;color:#cfe3ff}
+    .fade-in{animation:fadeInUp .45s ease both}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .anomaly-table{width:100%;border-collapse:collapse}
+    .anomaly-table thead th{color:var(--muted);font-size:12px;text-align:left;padding:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .anomaly-table tbody td{padding:10px 8px;border-bottom:1px dashed rgba(255,255,255,.06)}
+    .anomaly-table tbody tr{transition:background .2s ease}
+    .anomaly-table tbody tr:hover{background:rgba(96,165,250,.08)}
+    .status-chip{font-weight:700;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid}
+    .status-chip.ok{color:#bfffe5;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35)}
+    .status-chip.warn{color:#ffe9a3;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35)}
+    .status-chip.bad{color:#ffd2d8;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.45)}
+    .pill-small{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(96,165,250,.12);color:#cfe3ff;border:1px solid rgba(96,165,250,.35);font-size:12px}
+    .corr-grid{display:grid;grid-template-columns:60px repeat(4,1fr);grid-auto-rows:34px;gap:6px;margin-top:6px}
+    .corr-label{display:flex;align-items:center;justify-content:center;color:#a9c3e6;font-size:12px}
+    .corr-cell{display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,.08);color:#e6f0ff;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+    .corr-legend{display:flex;align-items:center;gap:8px;margin-top:6px;color:#a9c3e6;font-size:12px}
+    .legend-bar{flex:1;height:8px;border-radius:999px;background:linear-gradient(90deg,rgba(239,68,68,.6),rgba(245,158,11,.6),rgba(34,197,94,.6))}
+    .corr-canvas{width:100%;height:180px;border-radius:12px;background:#0f1636;border:1px solid rgba(255,255,255,.06)}
+    .rca{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+    .rca .suggest{font-weight:700;color:#ffe3e7}
+    .rca .details{color:#a9c3e6;font-size:13px}
+    .rca .actions{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#cfe3ff;font-size:12px}
+    .rca-toggle{cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px}
+    .rca-content{max-height:0;overflow:hidden;transition:max-height .35s ease}
+    .rca-content.open{max-height:240px}
+    .chev{transition:transform .25s ease}
+    .chev.open{transform:rotate(90deg)}
+    .timeline{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .event{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)}
+    .event .icon{font-weight:700}
+    .event .time{color:#9aa3b2;font-size:12px}
+
+    /* Responsive process table */
+    .proc-table{width:100%;border-collapse:collapse}
+    .proc-table th,.proc-table td{padding:10px 8px;border-bottom:1px dashed rgba(255,255,255,.08);font-size:12px;color:#d9e6f7}
+    .proc-table th{color:#a9c3e6;text-align:left}
+    .table-wrap{width:100%;overflow:auto}
+    .proc-ico{font-size:14px;margin-right:6px;opacity:.9}
+    .cpu-meta{display:flex;align-items:center;gap:8px;margin-top:4px}
+    .cpu-meta .status-chip{padding:2px 6px;font-size:11px}
+    @media(max-width:640px){
+      .proc-table.responsive thead{display:none}
+      .proc-table.responsive tbody tr{display:block;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03);margin:8px 0;padding:8px}
+      .proc-table.responsive tbody td{display:flex;align-items:center;justify-content:space-between;border-bottom:none}
+      .proc-table.responsive tbody td+td{margin-top:6px}
+      .proc-table.responsive tbody td::before{content:attr(data-label);color:#a9c3e6;font-size:12px;margin-right:12px}
+    }
   </style>
   <script defer src="nav.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <header class="site-header">
@@ -175,6 +240,161 @@
       </details>
     </div>
   </section>
+
+  <!-- Real-Time Metrics Dashboard (embedded from anomaly.html) -->
+   <section class="card">
+      <h2>Real-Time Metrics Dashboard</h2>
+      <p class="subtle">Live simulated updates every ~2.5 seconds</p>
+      <div class="charts">
+        <!-- Metrics Snapshot (static values) -->
+        <div class="subcard">
+          <h3 style="margin:0 0 8px">Metrics Snapshot</h3>
+          <div class="mini-grid">
+            <div class="mini">
+              <div class="label">CPU</div>
+              <div class="value">42%</div>
+              <div class="meta"><span class="status-dot ok"></span>Normal</div>
+            </div>
+            <div class="mini">
+              <div class="label">Request Time</div>
+              <div class="value">240 ms</div>
+              <div class="meta"><span class="status-dot warn"></span>Slightly elevated</div>
+            </div>
+            <div class="mini">
+              <div class="label">Disk Space</div>
+              <div class="value">320 GB / 500 GB</div>
+              <div class="meta"><span class="status-dot ok"></span>64% used</div>
+            </div>
+            <div class="mini">
+              <div class="label">Memory</div>
+              <div class="value">6 GB / 16 GB</div>
+              <div class="meta"><span class="status-dot ok"></span>37% used</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div style="font-weight:700">Top Process</div>
+            <div style="flex:1;min-width:220px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span class="subtitle">java (PID 1234)</span><span class="subtitle">CPU 78%</span></div>
+              <div class="progress"><div class="bar" style="background:var(--warn);width:78%"></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><span class="subtitle">Memory 26%</span><span class="subtitle">/opt/app/server</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Real-time CPU Chart -->
+        <div class="subcard chart-box">
+          <canvas id="rtmCpuChart"></canvas>
+        </div>
+        <!-- Real-time Error Rate Chart -->
+        <div class="subcard chart-box">
+          <canvas id="rtmErrChart"></canvas>
+        </div>
+        <!-- Real-time Disk Usage Chart -->
+        <div class="subcard chart-box">
+          <h3 style="margin:0 0 6px">Disk Usage (%)</h3>
+          <canvas id="rtmDiskChart"></canvas>
+        </div>
+        <!-- Real-time Memory Usage Chart -->
+        <div class="subcard chart-box">
+          <h3 style="margin:0 0 6px">Memory Usage (%)</h3>
+          <canvas id="rtmMemChart"></canvas>
+        </div>
+
+        <!-- Real-time Network I/O Chart -->
+        <div class="subcard chart-box sm">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <h3 style="margin:0">Network I/O (MB/s)</h3>
+            <span class="pill-small">Rx • Tx</span>
+          </div>
+          <canvas id="rtmNetChart"></canvas>
+        </div>
+        <!-- Real-time DB Connections Chart -->
+        <div class="subcard chart-box sm">
+          <h3 style="margin:0 0 6px">DB Connections (active)</h3>
+          <canvas id="rtmDbChart"></canvas>
+        </div>
+        <!-- Real-time Top 5 Processes by CPU -->
+        
+       
+
+      </section>
+      <section class="card">
+        <h2>Top 5 Processes by CPU Usage</h2>
+        <div class="table-wrap">
+          <table class="proc-table
+  responsive">
+              <thead>
+                <tr>
+                  <th>PID</th><th>Name</th><th>CPU %</th><th>Memory</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-label="PID">1234</td>
+                  <td data-label="Name"><span class="proc-ico">🟢</span>java</td>
+                  <td data-label="CPU %">78%</td>
+                  <td data-label="Memory">4.2 GB</td>
+                  <td data-label="Status">
+                    <div class="cpu-meta">
+                      <span class="status-chip warn">High CPU</span>
+                      <span class="subtitle">Running</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td data-label="PID">1105</td>
+                  <td data-label="Name"><span class="proc-ico">🟢</span>weblogic</td>
+                  <td data-label="CPU %">22%</td>
+                  <td data-label="Memory">3.5 GB</td>
+                  <td data-label="Status">
+                    <div class="cpu-meta">
+                      <span class="status-chip ok">Normal</span>
+                      <span class="subtitle">Running</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td data-label="PID">3101</td>
+                  <td data-label="Name"><span class="proc-ico">🟢</span>mysqld</td>
+                  <td data-label="CPU %">25%</td>
+                  <td data-label="Memory">2 GB</td>
+                  <td data-label="Status">
+                    <div class="cpu-meta">
+                      <span class="status-chip ok">Normal</span>
+                      <span class="subtitle">Running</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td data-label="PID">2098</td>
+                  <td data-label="Name"><span class="proc-ico">🟢</span>nginx</td>
+                  <td data-label="CPU %">5%</td>
+                  <td data-label="Memory">120 MB</td>
+                  <td data-label="Status">
+                    <div class="cpu-meta">
+                      <span class="status-chip ok">Normal</span>
+                      <span class="subtitle">Running</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td data-label="PID">1024</td>
+                  <td data-label="Name"><span class="proc-ico">🟢</span>sshd</td>
+                  <td data-label="CPU %">0.5%</td>
+                  <td data-label="Memory">30 MB</td>
+                  <td data-label="Status">
+                    <div class="cpu-meta">
+                      <span class="status-chip ok">Normal</span>
+                      <span class="subtitle">Running</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+      </section>
+      <div style="text-align:center;margin-top:12px;color:var(--muted);font-size:12px">Data is simulated for demo purposes only</div>
+  </section>
+
 </main>
 
 <script>
@@ -316,6 +536,214 @@ if (resetBtn) resetBtn.addEventListener('click', () => { $('#q').value=''; $('#s
 
 render();
 </script>
+
+<!-- Embedded Anomaly + Correlation scripts -->
+<script>
+  (function(){
+    function rw(start, min, max, step=2){ let v=start; return ()=>{ v=Math.max(min,Math.min(max,v+((Math.random()-.5)*step*2))); return Math.round(v*10)/10; } }
+    function makeFallback(el, msg){ if(!el) return; const note=document.createElement('div'); note.style.cssText='margin-top:6px;color:#a1b3cc;font-size:12px'; note.textContent=msg; const parent = el.parentElement || el; parent.appendChild(note); }
+
+    const cpuCanvas = document.getElementById('rtmCpuChart');
+    const errCanvas = document.getElementById('rtmErrChart');
+    const cpuRand = rw(42, 8, 92, 2.8);
+    const errRand = rw(1.2, 0, 8, 0.6);
+    let cpuChart=null, errChart=null, cpuData=null, errData=null;
+    if (window.Chart && cpuCanvas && cpuCanvas.getContext) {
+      const ctx = cpuCanvas.getContext('2d');
+      cpuData = { labels: [], datasets: [{ label:'CPU % (5m avg)', data: [], tension:.35, borderColor:'#60a5fa', backgroundColor:'rgba(96,165,250,.18)', fill:true, pointRadius:0, borderWidth:2 }] };
+      cpuChart = new Chart(ctx, { type:'line', data:cpuData, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0,max:100, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function pushCpu(){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); cpuData.labels.push(ts); cpuData.datasets[0].data.push(cpuRand()); if(cpuData.labels.length>24){ cpuData.labels.shift(); cpuData.datasets[0].data.shift(); } cpuChart.update('none'); }
+      for(let i=0;i<12;i++){ pushCpu(); }
+      setInterval(pushCpu, 2500);
+    } else if (cpuCanvas) { cpuCanvas.style.display='none'; makeFallback(cpuCanvas, 'Charts unavailable (Chart.js not loaded).'); }
+
+    if (window.Chart && errCanvas && errCanvas.getContext) {
+      const ctx2 = errCanvas.getContext('2d');
+      errData = { labels: [], datasets: [{ label:'Error Rate (%)', data: [], tension:.35, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.18)', fill:true, pointRadius:0, borderWidth:2 }] };
+      errChart = new Chart(ctx2, { type:'line', data:errData, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0,max:8, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function pushErr(){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); errData.labels.push(ts); errData.datasets[0].data.push(errRand()); if(errData.labels.length>24){ errData.labels.shift(); errData.datasets[0].data.shift(); } errChart.update('none'); }
+      for(let i=0;i<12;i++){ pushErr(); }
+      setInterval(pushErr, 3000);
+    } else if (errCanvas) { errCanvas.style.display='none'; makeFallback(errCanvas, 'Charts unavailable (Chart.js not loaded).'); }
+
+    // Additional real-time charts: Disk, Memory, Network I/O, DB Connections
+    function initLine(canvas, label, color, yMin, yMax){
+      if(!(window.Chart && canvas && canvas.getContext)) return null;
+      const ctx = canvas.getContext('2d');
+      const data = { labels: [], datasets: [{ label, data: [], tension:.35, borderColor:color, backgroundColor:color.replace('1)','0.18)'), fill:true, pointRadius:0, borderWidth:2 }] };
+      const chart = new Chart(ctx, { type:'line', data, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:yMin, max:yMax, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function push(val){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); data.labels.push(ts); data.datasets[0].data.push(val); if(data.labels.length>24){ data.labels.shift(); data.datasets[0].data.shift(); } chart.update('none'); }
+      function seed(n, gen){ data.labels.length=0; data.datasets[0].data.length=0; for(let i=0;i<n;i++){ push(gen()); } }
+      return { push, seed, data, chart };
+    }
+
+    function initDual(canvas, labels, colors, yMin, yMax){
+      if(!(window.Chart && canvas && canvas.getContext)) return null;
+      const ctx = canvas.getContext('2d');
+      const data = { labels: [], datasets: [
+        { label: labels[0], data: [], tension:.35, borderColor:colors[0], backgroundColor:colors[0].replace('1)','0.12)'), fill:true, pointRadius:0, borderWidth:2 },
+        { label: labels[1], data: [], tension:.35, borderColor:colors[1], backgroundColor:colors[1].replace('1)','0.12)'), fill:true, pointRadius:0, borderWidth:2 }
+      ]};
+      const chart = new Chart(ctx, { type:'line', data, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:yMin, max:yMax, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function push(v1, v2){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); data.labels.push(ts); data.datasets[0].data.push(v1); data.datasets[1].data.push(v2); if(data.labels.length>24){ data.labels.shift(); data.datasets.forEach(d=>d.data.shift()); } chart.update('none'); }
+      function seed(n, gen){ data.labels.length=0; data.datasets.forEach(d=>d.data.length=0); for(let i=0;i<n;i++){ const [a,b]=gen(); push(a,b); } }
+      return { push, seed, data, chart };
+    }
+
+    const diskCanvas = document.getElementById('rtmDiskChart');
+    const memCanvas  = document.getElementById('rtmMemChart');
+    const netCanvas  = document.getElementById('rtmNetChart');
+    const dbCanvas   = document.getElementById('rtmDbChart');
+
+    const diskGen = rw(64, 20, 95, 2.0);  // percent used
+    const memGen  = rw(37, 10, 90, 2.2);  // percent used
+    const netGen  = ()=>{ const rx=Math.max(0, Math.round(rw(85,10,180,10)()*10)/10); const tx=Math.max(0, Math.round(rw(60,5,150,8)()*10)/10); return [rx,tx]; };
+    const dbGen   = rw(42, 0, 200, 8);    // active connections
+
+    let diskL = initLine(diskCanvas, 'Disk % used', 'rgba(239,68,68,1)', 0, 100);
+    let memL  = initLine(memCanvas,  'Memory % used', 'rgba(96,165,250,1)', 0, 100);
+    let netL  = initDual(netCanvas, ['Rx','Tx'], ['rgba(34,197,94,1)','rgba(245,158,11,1)'], 0, 200);
+    let dbL   = initLine(dbCanvas,   'Active connections', 'rgba(99,102,241,1)', 0, 200);
+
+    function seedExtra(){ const n=12; if(diskL) diskL.seed(n, diskGen); if(memL) memL.seed(n, memGen); if(netL) netL.seed(n, netGen); if(dbL) dbL.seed(n, dbGen); }
+    seedExtra();
+    if(diskL) setInterval(()=>diskL.push(diskGen()), 3000);
+    if(memL)  setInterval(()=>memL.push(memGen()),  2800);
+    if(netL)  setInterval(()=>{ const [a,b]=netGen(); netL.push(a,b); }, 3200);
+    if(dbL)   setInterval(()=>dbL.push(dbGen()),    3500);
+
+    if(!window.Chart){
+      [diskCanvas,memCanvas,netCanvas,dbCanvas].forEach(c=>{ if(!c) return; c.style.display='none'; makeFallback(c, 'Charts unavailable (Chart.js not loaded).'); });
+    }
+    const anomaliesEl = document.getElementById('anomalyRows');
+    const metrics = ['CPU Utilization','Memory Utilization','Disk I/O','Network Latency','Error Rate'];
+    function mkRow(){ const m = metrics[Math.floor(Math.random()*metrics.length)]; let val = Math.round((Math.random()*100)*10)/10; let cls='ok', label='Healthy'; if(m==='Error Rate'){ val = Math.round((Math.random()*6)*10)/10; }
+      if((m!=='Error Rate' && val>80) || (m==='Error Rate' && val>3.5)){ cls='bad'; label='Critical'; } else if((m!=='Error Rate' && val>65) || (m==='Error Rate' && val>2)){ cls='warn'; label='Warning'; }
+      const tr = document.createElement('tr'); tr.className='fade-in'; tr.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${m}</td><td style="font-weight:700;color:#d9e6f7">${val}</td><td><span class=\"status-chip ${cls}\">${label}</span></td>`; return tr; }
+    function addAnomaly(){ if(!anomaliesEl) return; const row = mkRow(); anomaliesEl.prepend(row); while(anomaliesEl.children.length>8){ anomaliesEl.removeChild(anomaliesEl.lastChild); } }
+    for(let i=0;i<5;i++){ addAnomaly(); }
+    setInterval(addAnomaly, 3000);
+
+    // Legacy CPU/RPS charts from anomaly.html section
+    const cpuLegacy = document.getElementById('cpuChart');
+    const rpsLegacy = document.getElementById('rpsChart');
+    const cpuWinSel = document.getElementById('cpuWindow');
+    const rpsWinSel = document.getElementById('rpsWindow');
+    function winPoints(sel){ const v = parseInt((sel && sel.value) || '60',10); return Math.max(3, Math.floor(v/5)); }
+    function initLegacyLine(canvas, label, color, yMin, yMax){
+      if(!(window.Chart && canvas && canvas.getContext)) return null;
+      canvas.style.height = (label==='RPS' ? '220px' : '260px');
+      canvas.style.width = '100%';
+      const ctx = canvas.getContext('2d');
+      const data = { labels: [], datasets: [{ label, data: [], tension:.35, borderColor:color, backgroundColor:color.replace('1)','0.18)'), fill:true, pointRadius:0, borderWidth:2 }] };
+      const chart = new Chart(ctx, { type:'line', data, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:yMin, max:yMax, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function push(val){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); data.labels.push(ts); data.datasets[0].data.push(val); if(data.labels.length>24){ data.labels.shift(); data.datasets[0].data.shift(); } chart.update('none'); }
+      function seed(n, gen){ data.labels.length=0; data.datasets[0].data.length=0; for(let i=0;i<n;i++){ push(gen()); } }
+      return { push, seed, data, chart };
+    }
+    // Generators
+    const cpuGen = rw(42, 8, 92, 2.6);
+    const rpsGen = rw(320, 120, 900, 40);
+    let cpuL = initLegacyLine(cpuLegacy, 'CPU % (5m avg)', 'rgba(96,165,250,1)', 0, 100);
+    let rpsL = initLegacyLine(rpsLegacy, 'Requests/sec (5m avg)', 'rgba(34,197,94,1)', 0, 1000);
+    function seedLegacy(){ if(cpuL){ cpuL.seed(winPoints(cpuWinSel), cpuGen); } if(rpsL){ rpsL.seed(winPoints(rpsWinSel), rpsGen); } }
+    seedLegacy();
+    if(cpuL) setInterval(()=>cpuL.push(cpuGen()), 2500);
+    if(rpsL) setInterval(()=>rpsL.push(rpsGen()), 3000);
+    if(cpuWinSel) cpuWinSel.addEventListener('change', seedLegacy);
+    if(rpsWinSel) rpsWinSel.addEventListener('change', seedLegacy);
+  if(!window.Chart){
+      // graceful note under controls
+      function annotate(selId,msg){ const s=document.getElementById(selId); if(!s) return; const note=document.createElement('div'); note.className='subtitle'; note.style.marginTop='6px'; note.textContent=msg; const wrap=s.closest('.chart-controls'); if(wrap) wrap.appendChild(note); }
+      annotate('cpuWindow','Charts unavailable (Chart.js not loaded).');
+      annotate('rpsWindow','Charts unavailable (Chart.js not loaded).');
+      if(cpuLegacy) cpuLegacy.style.display='none';
+      if(rpsLegacy) rpsLegacy.style.display='none';
+    }
+
+    // Live-updating Top Processes by CPU
+    const procBody = document.getElementById('procTopBody');
+    const PROC_ICON = (name)=>{
+      const n = (name||'').toLowerCase();
+      if(n.includes('java')) return '☕';
+      if(n.includes('nginx')) return '🌐';
+      if(n.includes('mysql')||n.includes('mysqld')) return '🐬';
+      if(n.includes('ssh')) return '🔐';
+      if(n.includes('cron')) return '⏲️';
+      if(n.includes('node')) return '🟢';
+      return '⚙️';
+    };
+    function sev(cpu){ return cpu>=70?'down':(cpu>=50?'warn':'ok'); }
+    let procs = [
+      { name:'java',   pid:1234, cpu:78, mem:26 },
+      { name:'nginx',  pid:1105, cpu:22, mem:12 },
+      { name:'mysqld', pid:3101, cpu:15, mem:18 },
+      { name:'sshd',   pid:1024, cpu:5,  mem:3  },
+      { name:'cron',   pid:2048, cpu:2,  mem:1  },
+    ];
+    function renderProc(){ if(!procBody) return; procBody.innerHTML='';
+      procs.sort((a,b)=>b.cpu-a.cpu).slice(0,5).forEach(p=>{
+        const tr=document.createElement('tr');
+        const status = sev(p.cpu);
+        tr.innerHTML = `
+          <td data-label="Process"><span class="proc-ico">${PROC_ICON(p.name)}</span>${p.name} (PID ${p.pid})</td>
+          <td data-label="CPU %">
+            <div class="progress"><div class="bar" style="background:var(--${status==='down'?'down':(status==='warn'?'warn':'ok')});width:${p.cpu}%"></div></div>
+            <div class="cpu-meta"><small class="subtitle">${p.cpu}%</small><span class="status-chip ${status}">${status==='down'?'Critical':(status==='warn'?'Warning':'Healthy')}</span></div>
+          </td>
+          <td data-label="Memory %">
+            <div class="progress"><div class="bar" style="background:var(--accent);width:${p.mem}%"></div></div>
+            <small class="subtitle">${p.mem}%</small>
+          </td>`;
+        procBody.appendChild(tr);
+      });
+    }
+    function tickProc(){
+      procs.forEach(p=>{
+        p.cpu = Math.round(Math.max(0,Math.min(100, p.cpu + (Math.random()-0.5)*8)));
+        p.mem = Math.round(Math.max(0,Math.min(100, p.mem + (Math.random()-0.5)*5)));
+      });
+      renderProc();
+    }
+    renderProc();
+    setInterval(tickProc, 3200);
+
+    // Correlation visuals
+    const corrGrid = document.getElementById('corrGrid');
+    const corrCanvas = document.getElementById('corrNetwork');
+    const dims = ['','CPU','Memory','Disk','Network'];
+    let C = [ [1, .82, .55, .38], [.82,1,.57,.44], [.55,.57,1,.60], [.38,.44,.60,1] ];
+    function colorFor(r){ if(r>0.7) return 'rgba(34,197,94,.75)'; if(r>0.4) return 'rgba(34,197,94,.45)'; if(r>0.15) return 'rgba(245,158,11,.45)'; if(r<-0.4) return 'rgba(239,68,68,.6)'; return 'rgba(245,158,11,.3)'; }
+    function buildGrid(vals){ if(!corrGrid) return; corrGrid.innerHTML=''; dims.forEach((d,i)=>{ const el = document.createElement('div'); el.className='corr-label'; el.textContent=d; corrGrid.appendChild(el); if(i===0){ for(let k=1;k<dims.length;k++){ const h=document.createElement('div'); h.className='corr-label'; h.textContent=dims[k]; corrGrid.appendChild(h);} } else { for(let j=1;j<dims.length;j++){ const cell=document.createElement('div'); cell.className='corr-cell'; const r = (i===j)?1:vals[i-1][j-1]; cell.style.background=colorFor(r); cell.style.borderColor='rgba(255,255,255,.12)'; cell.textContent = (i===j)?'1.00':r.toFixed(2); corrGrid.appendChild(cell);} } }); }
+    buildGrid(C);
+    function drawNetwork(){ if(!corrCanvas) return; const ctx = corrCanvas.getContext('2d'); const w = corrCanvas.width = corrCanvas.clientWidth; const h = corrCanvas.height = corrCanvas.clientHeight; ctx.clearRect(0,0,w,h); const nodes=['CPU','Memory','Disk','Network']; const pos=[{x:w*0.5,y:h*0.18},{x:w*0.18,y:h*0.6},{x:w*0.82,y:h*0.6},{x:w*0.5,y:h*0.9}];
+      function edgeColor(r){ return r>=0 ? `rgba(34,197,94,${Math.min(0.15+Math.abs(r)*0.7,0.9)})` : `rgba(239,68,68,${Math.min(0.15+Math.abs(r)*0.7,0.9)})`; }
+      function edgeWidth(r){ return 1 + Math.max(0.5, Math.abs(r)*4); }
+      ctx.lineCap='round';
+      for(let i=0;i<4;i++){
+        for(let j=i+1;j<4;j++){
+          const r=C[i][j]; ctx.strokeStyle=edgeColor(r); ctx.lineWidth=edgeWidth(r); ctx.beginPath(); ctx.moveTo(pos[i].x,pos[i].y); ctx.lineTo(pos[j].x,pos[j].y); ctx.stroke();
+        }
+      }
+      nodes.forEach((n,idx)=>{ const {x,y}=pos[idx]; ctx.fillStyle='#121a3e'; ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1; const R=18; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#e7ecf3'; ctx.font='12px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(n,x,y); });
+    }
+    drawNetwork();
+    function drift(){ for(let i=0;i<4;i++){ for(let j=0;j<4;j++){ if(i===j) continue; C[i][j]+= (Math.random()-.5)*0.02; C[i][j]=Math.max(-1,Math.min(1,C[i][j])); C[j][i]=C[i][j]; } } buildGrid(C); drawNetwork(); updateRCA(); }
+    setInterval(drift, 5000);
+
+    // RCA
+    const rcaTitle = document.getElementById('rcaTitle');
+    const rcaDetails = document.getElementById('rcaDetails');
+    const rcaTimeline = document.getElementById('rcaTimeline');
+    function strongestPair(){ let a='CPU',b='Memory',r=0; const names=['CPU','Memory','Disk','Network']; for(let i=0;i<4;i++){ for(let j=i+1;j<4;j++){ const v=C[i][j]; if(Math.abs(v)>Math.abs(r)){ r=v; a=names[i]; b=names[j]; } } } return {a,b,r}; }
+    function updateRCA(){ const {a,b,r}=strongestPair(); const pos = r>=0; const sev = Math.abs(r)>0.85?'down':(Math.abs(r)>0.7?'warn':'ok'); const icon = sev==='down'?'[CRIT]':(sev==='warn'?'[WARN]':'[OK]'); if (rcaTitle) rcaTitle.textContent = `Focus: ${a} related to ${b} (r=${r.toFixed(2)})`; if (rcaDetails) rcaDetails.textContent = `${a} anomalies correlate with ${b}. Review recent changes, resource limits, and dependent services.`; if (rcaTimeline){ const ev=document.createElement('div'); ev.className='event'; ev.innerHTML = `<span class=\"icon\">${icon}</span><span>${a} ↔ ${b} ${(pos?'move together':'move opposite')}</span><span class=\"time\">${new Date().toLocaleTimeString()}</span>`; rcaTimeline.prepend(ev); while(rcaTimeline.children.length>5){ rcaTimeline.removeChild(rcaTimeline.lastChild); } } }
+    updateRCA();
+    const rcaToggle = document.getElementById('rcaToggle');
+    const rcaContent = document.getElementById('rcaContent');
+    const rcaChev = document.getElementById('rcaChev');
+    if (rcaToggle) rcaToggle.addEventListener('click', ()=>{ rcaContent.classList.toggle('open'); rcaChev.classList.toggle('open'); });
+  })();
+</script>
 <!-- AI Log Analyzer Modal -->
 <div id="log-modal" class="modal-backdrop" style="display:none">
   <div class="modal-content">
@@ -351,3 +779,79 @@ render();
 
 </body>
 </html>
+<!-- Removed duplicate embed script block that was appended after closing tags -->
+<!--
+<script>
+  (function(){
+    function rw(start, min, max, step=2){ let v=start; return ()=>{ v=Math.max(min,Math.min(max,v+((Math.random()-.5)*step*2))); return Math.round(v*10)/10; } }
+    function makeFallback(el, msg){ if(!el) return; const note=document.createElement('div'); note.style.cssText='margin-top:6px;color:#a1b3cc;font-size:12px'; note.textContent=msg; const parent = el.parentElement || el; parent.appendChild(note); }
+
+    const cpuCanvas = document.getElementById('rtmCpuChart');
+    const errCanvas = document.getElementById('rtmErrChart');
+    const cpuRand = rw(42, 8, 92, 2.8);
+    const errRand = rw(1.2, 0, 8, 0.6);
+    let cpuChart=null, errChart=null, cpuData=null, errData=null;
+    if (window.Chart && cpuCanvas && cpuCanvas.getContext) {
+      const ctx = cpuCanvas.getContext('2d');
+      cpuData = { labels: [], datasets: [{ label:'CPU % (5m avg)', data: [], tension:.35, borderColor:'#60a5fa', backgroundColor:'rgba(96,165,250,.18)', fill:true, pointRadius:0, borderWidth:2 }] };
+      cpuChart = new Chart(ctx, { type:'line', data:cpuData, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0,max:100, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function pushCpu(){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); cpuData.labels.push(ts); cpuData.datasets[0].data.push(cpuRand()); if(cpuData.labels.length>24){ cpuData.labels.shift(); cpuData.datasets[0].data.shift(); } cpuChart.update('none'); }
+      for(let i=0;i<12;i++){ pushCpu(); }
+      setInterval(pushCpu, 2500);
+    } else if (cpuCanvas) { cpuCanvas.style.display='none'; makeFallback(cpuCanvas, 'Charts unavailable (Chart.js not loaded).'); }
+
+    if (window.Chart && errCanvas && errCanvas.getContext) {
+      const ctx2 = errCanvas.getContext('2d');
+      errData = { labels: [], datasets: [{ label:'Error Rate (%)', data: [], tension:.35, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.18)', fill:true, pointRadius:0, borderWidth:2 }] };
+      errChart = new Chart(ctx2, { type:'line', data:errData, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ min:0,max:8, grid:{color:'rgba(255,255,255,.06)'}}, x:{ grid:{display:false} } }, plugins:{ legend:{labels:{color:'#cfe3ff'}}, tooltip:{enabled:true} } } });
+      function pushErr(){ const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); errData.labels.push(ts); errData.datasets[0].data.push(errRand()); if(errData.labels.length>24){ errData.labels.shift(); errData.datasets[0].data.shift(); } errChart.update('none'); }
+      for(let i=0;i<12;i++){ pushErr(); }
+      setInterval(pushErr, 3000);
+    } else if (errCanvas) { errCanvas.style.display='none'; makeFallback(errCanvas, 'Charts unavailable (Chart.js not loaded).'); }
+
+    const anomaliesEl = document.getElementById('anomalyRows');
+    const metrics = ['CPU Utilization','Memory Utilization','Disk I/O','Network Latency','Error Rate'];
+    function mkRow(){ const m = metrics[Math.floor(Math.random()*metrics.length)]; let val = Math.round((Math.random()*100)*10)/10; let cls='ok', label='Healthy'; if(m==='Error Rate'){ val = Math.round((Math.random()*6)*10)/10; }
+      if((m!=='Error Rate' && val>80) || (m==='Error Rate' && val>3.5)){ cls='bad'; label='Critical'; } else if((m!=='Error Rate' && val>65) || (m==='Error Rate' && val>2)){ cls='warn'; label='Warning'; }
+      const tr = document.createElement('tr'); tr.className='fade-in'; tr.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${m}</td><td style="font-weight:700;color:#d9e6f7">${val}</td><td><span class=\"status-chip ${cls}\">${label}</span></td>`; return tr; }
+    function addAnomaly(){ if(!anomaliesEl) return; const row = mkRow(); anomaliesEl.prepend(row); while(anomaliesEl.children.length>8){ anomaliesEl.removeChild(anomaliesEl.lastChild); } }
+    for(let i=0;i<5;i++){ addAnomaly(); }
+    setInterval(addAnomaly, 3000);
+
+    // Correlation visuals
+    const corrGrid = document.getElementById('corrGrid');
+    const corrCanvas = document.getElementById('corrNetwork');
+    const dims = ['','CPU','Memory','Disk','Network'];
+    let C = [ [1, .82, .55, .38], [.82,1,.57,.44], [.55,.57,1,.60], [.38,.44,.60,1] ];
+    function colorFor(r){ if(r>0.7) return 'rgba(34,197,94,.75)'; if(r>0.4) return 'rgba(34,197,94,.45)'; if(r>0.15) return 'rgba(245,158,11,.45)'; if(r<-0.4) return 'rgba(239,68,68,.6)'; return 'rgba(245,158,11,.3)'; }
+    function buildGrid(vals){ if(!corrGrid) return; corrGrid.innerHTML=''; dims.forEach((d,i)=>{ const el = document.createElement('div'); el.className='corr-label'; el.textContent=d; corrGrid.appendChild(el); if(i===0){ for(let k=1;k<dims.length;k++){ const h=document.createElement('div'); h.className='corr-label'; h.textContent=dims[k]; corrGrid.appendChild(h);} } else { for(let j=1;j<dims.length;j++){ const cell=document.createElement('div'); cell.className='corr-cell'; const r = (i===j)?1:vals[i-1][j-1]; cell.style.background=colorFor(r); cell.style.borderColor='rgba(255,255,255,.12)'; cell.textContent = (i===j)?'1.00':r.toFixed(2); corrGrid.appendChild(cell);} } }); }
+    buildGrid(C);
+    function drawNetwork(){ if(!corrCanvas) return; const ctx = corrCanvas.getContext('2d'); const w = corrCanvas.width = corrCanvas.clientWidth; const h = corrCanvas.height = corrCanvas.clientHeight; ctx.clearRect(0,0,w,h); const nodes=['CPU','Memory','Disk','Network']; const pos=[{x:w*0.5,y:h*0.18},{x:w*0.18,y:h*0.6},{x:w*0.82,y:h*0.6},{x:w*0.5,y:h*0.9}];
+      function edgeColor(r){ return r>=0 ? `rgba(34,197,94,${Math.min(0.15+Math.abs(r)*0.7,0.9)})` : `rgba(239,68,68,${Math.min(0.15+Math.abs(r)*0.7,0.9)})`; }
+      function edgeWidth(r){ return 1 + Math.max(0.5, Math.abs(r)*4); }
+      ctx.lineCap='round';
+      for(let i=0;i<4;i++){
+        for(let j=i+1;j<4;j++){
+          const r=C[i][j]; ctx.strokeStyle=edgeColor(r); ctx.lineWidth=edgeWidth(r); ctx.beginPath(); ctx.moveTo(pos[i].x,pos[i].y); ctx.lineTo(pos[j].x,pos[j].y); ctx.stroke();
+        }
+      }
+      nodes.forEach((n,idx)=>{ const {x,y}=pos[idx]; ctx.fillStyle='#121a3e'; ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1; const R=18; ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle='#e7ecf3'; ctx.font='12px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(n,x,y); });
+    }
+    drawNetwork();
+    function drift(){ for(let i=0;i<4;i++){ for(let j=0;j<4;j++){ if(i===j) continue; C[i][j]+= (Math.random()-.5)*0.02; C[i][j]=Math.max(-1,Math.min(1,C[i][j])); C[j][i]=C[i][j]; } } buildGrid(C); drawNetwork(); updateRCA(); }
+    setInterval(drift, 5000);
+
+    // RCA
+    const rcaTitle = document.getElementById('rcaTitle');
+    const rcaDetails = document.getElementById('rcaDetails');
+    const rcaTimeline = document.getElementById('rcaTimeline');
+    function strongestPair(){ let a='CPU',b='Memory',r=0; const names=['CPU','Memory','Disk','Network']; for(let i=0;i<4;i++){ for(let j=i+1;j<4;j++){ const v=C[i][j]; if(Math.abs(v)>Math.abs(r)){ r=v; a=names[i]; b=names[j]; } } } return {a,b,r}; }
+    function updateRCA(){ const {a,b,r}=strongestPair(); const pos = r>=0; const sev = Math.abs(r)>0.85?'down':(Math.abs(r)>0.7?'warn':'ok'); const icon = sev==='down'?'[CRIT]':(sev==='warn'?'[WARN]':'[OK]'); if (rcaTitle) rcaTitle.textContent = `Focus: ${a} related to ${b} (r=${r.toFixed(2)})`; if (rcaDetails) rcaDetails.textContent = `${a} anomalies correlate with ${b}. Review recent changes, resource limits, and dependent services.`; if (rcaTimeline){ const ev=document.createElement('div'); ev.className='event'; ev.innerHTML = `<span class=\"icon\">${icon}</span><span>${a} ↔ ${b} ${(pos?'move together':'move opposite')}</span><span class=\"time\">${new Date().toLocaleTimeString()}</span>`; rcaTimeline.prepend(ev); while(rcaTimeline.children.length>5){ rcaTimeline.removeChild(rcaTimeline.lastChild); } } }
+    updateRCA();
+    const rcaToggle = document.getElementById('rcaToggle');
+    const rcaContent = document.getElementById('rcaContent');
+    const rcaChev = document.getElementById('rcaChev');
+    if (rcaToggle) rcaToggle.addEventListener('click', ()=>{ rcaContent.classList.toggle('open'); rcaChev.classList.toggle('open'); });
+  })();
+</script>
+-->

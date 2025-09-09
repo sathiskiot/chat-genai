@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRE Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --panel: #11161e;
+      --panel-2: #0e131a;
+      --text: #e6f0ff;
+      --muted: #9bb3d1;
+      --accent: #00d1ff;
+      --danger: #ff5468;
+      --warn: #ffd166;
+      --success: #5bffb7;
+      --shadow: 0 10px 30px rgba(0, 208, 255, 0.12);
+      --radius: 14px;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 22px;
+      background: var(--panel);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 14px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .nav a:hover {
+      background: rgba(0, 209, 255, 0.12);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .kpis {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .kpi {
+      text-align: center;
+      background: var(--panel-2);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .kpi-title {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .metric {
+      text-align: center;
+      background: var(--panel-2);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .metric-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      background: var(--accent);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .table th, .table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .table th {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .table td {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 10px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+
+    .collapsible {
+      cursor: pointer;
+      padding: 10px;
+      background: var(--panel-2);
+      border-radius: var(--radius);
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .collapsible.open + .collapsible-content {
+      max-height: 500px;
+    }
+    .pill {
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+  }
+
+  .pill.success {
+    background: rgba(91, 255, 183, 0.2);
+    color: #5bffb7;
+  }
+
+  .pill.danger {
+    background: rgba(255, 84, 104, 0.2);
+    color: #ff5468;
+  }
+  .site-header {
+      background: linear-gradient(180deg, rgba(10, 14, 20, 0.95), rgba(10, 14, 20, 0.85));
+      border-bottom: 1px solid rgba(0, 209, 255, 0.12);
+      backdrop-filter: blur(8px);
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .site-header .brand {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .site-header .nav-menu {
+      display: flex;
+      gap: 14px;
+    }
+
+    .site-header .nav-menu a {
+      color: var(--muted);
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    .site-header .nav-menu a.active,
+    .site-header .nav-menu a:hover {
+      color: var(--text);
+      background: rgba(0, 209, 255, 0.12);
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+    <a class="brand" href="index.html">SRE AI LensView</a>
+    <nav class="nav-menu">
+      <a href="infra-dashboard.html">Dashboard</a>
+      <a href="logs-analzer.html">Logs Analyzer</a>
+      <a href="anomaly.html">Anomaly Detection</a>
+      <a href="forecasting.html">Forecasting</a>
+      <a href="priorities-dashboard.html">Remediate Issue</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- KPIs -->
+    <section class="grid kpis" id="kpis">
+      <div class="card kpi">
+        <div class="kpi-title">MTTR</div>
+        <div class="kpi-value" id="mttr">4h 32m</div>
+        <div class="kpi-sub">Mean Time To Restore</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-title">MTTD</div>
+        <div class="kpi-value" id="mttd">15m</div>
+        <div class="kpi-sub">Mean Time To Detect</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-title">Incidents</div>
+        <div class="kpi-value" id="incidents">3 / 12</div>
+        <div class="kpi-sub">Open / Total</div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-title">Self-Healing</div>
+        <div class="kpi-value" id="selfHealing">85%</div>
+        <div class="kpi-sub">Auto-resolved %</div>
+      </div>
+    </section>
+
+
+    <!-- Incident Management -->
+    <section class="card" id="incidents">
+  <h2>Incident Management</h2>
+  <div class="collapsible">Incident Details <span>▼</span></div>
+  <div class="collapsible-content">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Incident ID</th>
+          <th>Status</th>
+          <th>Resolved By</th>
+          <th>Resolution Time</th>
+          <th>MTTD</th>
+          <th>Self-Healing</th>
+        </tr>
+      </thead>
+      <tbody id="incidentTable">
+        <tr>
+          <td>#1234</td>
+          <td>Open</td>
+          <td>-</td>
+          <td>-</td>
+          <td>12m</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>#1235</td>
+          <td>Closed</td>
+          <td>John Doe</td>
+          <td>3h 15m</td>
+          <td>10m</td>
+          <td>Yes</td>
+        </tr>
+        <tr>
+          <td>#1236</td>
+          <td>Closed</td>
+          <td>Auto</td>
+          <td>2h 10m</td>
+          <td>8m</td>
+          <td>Yes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<!-- Add this section for Anomalies -->
+<section class="card" id="anomalies">
+  <h2>Anomalies</h2>
+  <p>Real-time anomaly detection and status updates.</p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Metric</th>
+        <th>Value</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="anomalyTable">
+      <!-- Dynamic rows will be added here -->
+    </tbody>
+  </table>
+</section>
+    <!-- Self-Healing Insights -->
+    <section class="card" id="self-healing">
+      <h2>Self-Healing Insights</h2>
+      <div class="chart-container">
+        <canvas id="selfHealingChart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">Demo data; refresh every 5s • © 2025 SRE Dashboard</footer>
+
+  <script>
+    // Utility functions for random data
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function getRandomFloat(min, max, decimals = 1) {
+      return (Math.random() * (max - min) + min).toFixed(decimals);
+    }
+
+    // Collapsible Incident Details
+    document.querySelector('.collapsible').addEventListener('click', function () {
+      this.classList.toggle('open');
+      this.nextElementSibling.classList.toggle('open');
+    });
+
+
+    // Self-Healing Pie Chart
+    const selfHealingCtx = document.getElementById('selfHealingChart').getContext('2d');
+    const selfHealingChart = new Chart(selfHealingCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Auto-Resolved', 'Manual Intervention'],
+        datasets: [
+          {
+            data: [85, 15],
+            backgroundColor: ['rgba(91, 255, 183, 0.8)', 'rgba(255, 84, 104, 0.8)'],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#e6f0ff',
+            },
+          },
+        },
+      },
+    });
+
+    // Simulate real-time updates every 5 seconds
+    setInterval(() => {
+      // Update KPIs
+      document.getElementById('mttr').textContent = `${getRandomInt(2, 6)}h ${getRandomInt(10, 59)}m`;
+      document.getElementById('mttd').textContent = `${getRandomInt(10, 30)}m`;
+      document.getElementById('incidents').textContent = `${getRandomInt(1, 5)} / 12`;
+      document.getElementById('selfHealing').textContent = `${getRandomInt(80, 95)}%`;
+
+      // Update Self-Healing Chart
+      const autoResolved = getRandomInt(80, 95);
+      const manualIntervention = 100 - autoResolved;
+      selfHealingChart.data.datasets[0].data = [autoResolved, manualIntervention];
+      selfHealingChart.update();
+    }, 5000);
+
+    // Utility function to generate a timestamp
+  function getTimestamp() {
+    const now = new Date();
+    return now.toLocaleTimeString();
+  }
+
+  // Function to update anomalies table dynamically
+  const anomalyTable = document.getElementById('anomalyTable');
+  const anomalyMetrics = ['CPU Usage', 'Memory Usage', 'Disk I/O', 'Network Latency'];
+
+  function updateAnomalies() {
+    const newAnomaly = {
+      timestamp: getTimestamp(),
+      metric: anomalyMetrics[Math.floor(Math.random() * anomalyMetrics.length)],
+      value: `${getRandomFloat(50, 100)}%`,
+      status: Math.random() > 0.7 ? 'Anomaly Detected' : 'Normal',
+    };
+
+    const row = document.createElement('tr');
+    const statusClass = newAnomaly.status === 'Anomaly Detected' ? 'danger' : 'success';
+    const statusText = newAnomaly.status === 'Anomaly Detected' ? 'Anomaly' : 'Normal';
+
+    row.innerHTML = `
+      <td>${newAnomaly.timestamp}</td>
+      <td>${newAnomaly.metric}</td>
+      <td>${newAnomaly.value}</td>
+      <td>
+        <span class="pill ${statusClass}">
+          ${statusText}
+        </span>
+      </td>
+    `;
+    anomalyTable.prepend(row);
+
+    // Keep only the latest 5 rows
+    while (anomalyTable.children.length > 5) {
+      anomalyTable.removeChild(anomalyTable.lastChild);
+    }
+  }
+
+  // Simulate real-time anomaly updates every 5 seconds
+  setInterval(updateAnomalies, 5000);
+ 
+
+  </script>
+</body>
+</html>
