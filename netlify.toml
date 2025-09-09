@@ -4,5 +4,5 @@
 
 [[redirects]]
   from = "/"
-  to = "/infra-dashboard.html"
+  to = "/index.html"
   status = 200
